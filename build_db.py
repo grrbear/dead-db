@@ -25,7 +25,7 @@ indicates the title parser needs an additional pattern.
 import yaml, glob, os, sqlite3
 
 DATA_DIR = "gddata/data/gdshowsdb"
-DB_PATH = "data/dead.db"
+DB_PATH = os.environ.get("DB_PATH", "/hddpool/datastore/dead.db")
 
 def year_files():
     return sorted(

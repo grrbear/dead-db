@@ -23,7 +23,7 @@ DATE_RE = re.compile(r'^(\d{4}-\d{2}-\d{2})')
 
 PLEX_URL   = os.environ.get("PLEX_URL",   "http://192.168.0.5:32400")
 PLEX_TOKEN = os.environ.get("PLEX_TOKEN", "")
-DB_PATH    = os.environ.get("DB_PATH",    "data/dead.db")
+DB_PATH    = os.environ.get("DB_PATH",    "/hddpool/datastore/dead.db")
 GD_SECTION = os.environ.get("GD_SECTION", "")
 
 
