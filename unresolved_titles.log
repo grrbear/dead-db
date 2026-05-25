@@ -1,0 +1,16 @@
+# Plex GD albums that don't match ^(\d{4}-\d{2}-\d{2}) — expected NULLs
+# Validation date: 2026-05-22  Count: 10  (threshold: 10-20 → PASS)
+#
+# All are studio albums, compilations, month-only boots, or SaveYourFace mixes.
+# None represent a title-parser failure.
+
+1967 - The Grateful Dead (50th Anniversary Edition)          [studio]
+1968-06 Carousel Ballroom [SaveYourFace Mix]                 [month-only boot]
+1971-08 - Summer '71 [Road Trips 1.3 + Bonus Disc]          [month-only boot]
+1972 - Europe '72                                            [studio/compilation]
+1972 - Europe '72, Volume 2                                  [compilation]
+1973 - History of the Grateful Dead, Volume 1: Bear's Choice [compilation]
+1974 - From the Mars Hotel (50th Anniversary Edition)        [studio]
+1974 - Skeletons From the Closet: The Best of Grateful Dead  [compilation]
+1976 - Steal Your Face                                       [compilation]
+1976 Out of Nowhere Jams [SaveYourFace Mix]                  [SaveYourFace mix]
