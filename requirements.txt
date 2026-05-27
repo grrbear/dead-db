@@ -1,2 +1,5 @@
 pyyaml
 requests
+sentence-transformers>=3.0
+sqlite-vec>=0.1.6
+numpy>=1.24
