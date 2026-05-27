@@ -96,16 +96,21 @@ Validation floors (all scripts fail loudly if breached):
 
 ## MCP Tools
 
-Six tools exposed via homelab-mcp (`https://mcp.quickswoodcapital.com/mcp`):
+Eleven tools exposed via homelab-mcp (`https://mcp.quickswoodcapital.com/mcp`):
 
 | Tool | Description |
 |---|---|
-| `dead_stats` | Totals, top 10 songs, top 10 venues, most active years |
+| `dead_stats` | Totals, top 10 songs/venues, most active years (top 10), archive.org coverage |
 | `dead_setlist(date)` | Full set-by-set setlist for any show, with segue markers and Plex flag |
 | `dead_song_history(song, year, limit)` | Every performance of a song; filterable by year |
 | `dead_shows(year, venue, city, song, limit)` | Filter shows — find all dates where a song appeared |
 | `dead_plex_library(query, limit)` | Your Plex GD albums with venue info and ratingKeys (for playlist tools) |
-| `dead_show_recordings(date)` | How to hear a show: owned Plex copies + best-ranked archive.org recordings |
+| `dead_show_recordings(date)` | Owned Plex copies + top-ranked archive.org recordings for any show |
+| `dead_this_date(month, day)` | Every show the Dead played on this calendar date across all years |
+| `dead_song_stats(song)` | Deep stats: first/last played, longest gap, set distribution, decade breakdown |
+| `dead_segues(song_a, song_b)` | All `A > B` occurrences, or top 10 songs `A` segued into |
+| `dead_run(date)` | Full tour run context for any show — all adjacent dates (≤3-day gap) |
+| `dead_rare_songs(year, max_plays)` | Songs played ≤N times overall or within a single year |
 
 `dead_show_recordings` ranking: recordings with ≥3 reviews sorted by rating, tie-broken by source quality (SBD/MATRIX > FM > AUD) then downloads.
 
