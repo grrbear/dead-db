@@ -7,7 +7,7 @@ A normalized SQLite database of Grateful Dead setlists, joined to your Plex musi
 - Loads all 2,358 Grateful Dead shows and 39,774 song performances from [gdshowsdb](https://github.com/jefmsmit/gdshowsdb) YAML into a relational SQLite DB
 - Pulls all albums from your Plex "Grateful Dead" library section, extracts show dates from album titles, and writes a `plex_albums` join table
 - Scrapes 18,224 recordings from the [archive.org GratefulDead collection](https://archive.org/details/GratefulDead) and writes an `archive_recordings` table with source classification and rankings
-- Exposes 6 MCP tools via [homelab-mcp](https://github.com/grrbear/homelab) so you can ask Claude questions like "what did they play at Cornell 77", "every time they played Scarlet > Fire", or "how can I hear the Veneta 72 show"
+- Exposes 11 MCP tools via [homelab-mcp](https://github.com/grrbear/homelab) (`homelab-mcp/tools/deaddb.py`) so you can ask Claude questions like "what did they play at Cornell 77", "every time they played Scarlet > Fire", or "how can I hear the Veneta 72 show"
 
 ## Schema
 
