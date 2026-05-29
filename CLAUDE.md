@@ -72,6 +72,7 @@ dead_ask  — entity-aware router: extracts dates/songs/era, hybrid retrieval,
             returns chunks + suggested SQL followup calls
 
 ## Repo layout (current)
+```
 dead-db/
   README.md
   CLAUDE.md                  # this file
@@ -109,6 +110,7 @@ dead-db/
       lia.py
       wikipedia.py
       books.py
+```
 
 ## How phase work happens
 

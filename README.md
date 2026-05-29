@@ -7,7 +7,7 @@ A normalized SQLite database of Grateful Dead setlists, joined to your Plex musi
 - Loads all 2,358 Grateful Dead shows and 39,774 song performances from [gdshowsdb](https://github.com/jefmsmit/gdshowsdb) YAML into a relational SQLite DB
 - Pulls all albums from your Plex "Grateful Dead" library section, extracts show dates from album titles, and writes a `plex_albums` join table
 - Scrapes 18,224 recordings from the [archive.org GratefulDead collection](https://archive.org/details/GratefulDead) and writes an `archive_recordings` table with source classification and rankings
-- Exposes 11 MCP tools via [homelab-mcp](https://github.com/grrbear/homelab) (`homelab-mcp/tools/deaddb.py`) so you can ask Claude questions like "what did they play at Cornell 77", "every time they played Scarlet > Fire", or "how can I hear the Veneta 72 show"
+- Exposes 13 MCP tools via [homelab-mcp](https://github.com/grrbear/homelab) (`homelab-mcp/tools/deaddb.py`) so you can ask Claude questions like "what did they play at Cornell 77", "every time they played Scarlet > Fire", or "how can I hear the Veneta 72 show"
 
 ## Schema
 
@@ -154,6 +154,26 @@ ORDER BY CASE WHEN num_reviews>=3 THEN 0 ELSE 1 END, -COALESCE(avg_rating,0)
 LIMIT 5;
 ```
 
+## Lore corpus
+
+Phase 3 adds a second SQLite database (`/hddpool/datastore/dead_lore.db`) with semantic search over four corpora:
+
+| Source | Content | Builder |
+|---|---|---|
+| `lia_essays` | ~200 essays from Light Into Ashes (deadessays.blogspot.com) | `lore/fetchers/lia.py` |
+| `lia_sources` | Primary source clippings linked from LIA essays | `lore/fetchers/lia.py` |
+| `wikipedia` | ~110 curated Wikipedia articles (albums, members, key shows, songs) | `lore/fetchers/wikipedia.py` |
+| `book` | Grateful Dead books from the local EPUB library | `lore/fetchers/books.py` |
+
+Embeddings: `BAAI/bge-small-en-v1.5` (384 dim, CPU). Vector search via `sqlite-vec`.
+
+Song mentions in chunks are matched against `dead.db.songs.name` via fuzzy matching (`lore/song_matcher.py`).
+
+To rebuild the lore DB:
+```bash
+python3 -m lore.build_lore_db
+```
+
 ## File layout
 
 ```
@@ -186,27 +206,6 @@ dead-db/
       wikipedia.py     # Wikipedia API fetcher
       books.py         # EPUB library fetcher
       _html.py         # shared HTML cleaning utilities
-```
-
-## Lore corpus
-
-Phase 3 adds a second SQLite database (`/hddpool/datastore/dead_lore.db`) with semantic search over four corpora:
-
-| Source | Content | Builder |
-|---|---|---|
-| `lia_essays` | ~200 essays from Light Into Ashes (deadessays.blogspot.com) | `lore/fetchers/lia.py` |
-| `lia_sources` | Primary source clippings linked from LIA essays | `lore/fetchers/lia.py` |
-| `wikipedia` | ~110 curated Wikipedia articles (albums, members, key shows, songs) | `lore/fetchers/wikipedia.py` |
-| `book` | Grateful Dead books from the local EPUB library | `lore/fetchers/books.py` |
-
-Embeddings: `BAAI/bge-small-en-v1.5` (384 dim, CPU). Vector search via `sqlite-vec`.
-
-Song mentions in chunks are matched against `dead.db.songs.name` via fuzzy matching (`lore/song_matcher.py`).
-
-To rebuild the lore DB:
-```bash
-cd /home/bear/dead-db
-python3 -m lore.build_lore_db
 ```
 
 ## Data sources
