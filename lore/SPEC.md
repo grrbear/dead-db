@@ -1,3 +1,8 @@
+> **Status: COMPLETE.** This spec describes the scaffolding phase only.
+> All subsequent phase 3 work (fetchers, song matching, MCP tools, router)
+> is documented in separate SPEC_*.md files in this directory.
+> See CLAUDE.md for overall phase status.
+
 # dead-db phase 3 — lore pipeline scaffolding
 
 ## Context

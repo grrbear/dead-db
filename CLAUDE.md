@@ -9,7 +9,7 @@ and which design decisions are locked (so they're not relitigated).
 A normalized SQLite database of Grateful Dead setlists, joined to my Plex
 music library and archive.org recordings, with structured questions
 answered by SQL and lore/insight questions answered by RAG. Exposed as
-MCP tools via homelab-mcp.
+13 MCP tools via homelab-mcp.
 
 See README.md for end-user-facing description. This file is for picking
 up development between sessions.
@@ -21,13 +21,17 @@ up development between sessions.
       homelab-mcp/tools/deaddb.py
 - [x] **Phase 4** — archive.org gap-fill (built ahead of phase 3 because
       archive.org has a clean API; no regrets)
-- [~] **Phase 3** — RAG over Grateful Dead lore (in progress)
-  - [x] Scaffolding (`lore/` package, smoke_test passes)
-  - [ ] Wikipedia fetcher (NEXT)
-  - [ ] Light Into Ashes fetcher (deadessays.blogspot)
-  - [ ] Deadcast fetcher — first confirm transcripts exist or need Whisper
-  - [ ] Song-name matching to populate chunks.mentioned_songs
-  - [ ] MCP tools: dead_lore(query) + dead_ask(question) router
+- [x] **Phase 3** — RAG over Grateful Dead lore
+  - [x] Scaffolding (`lore/` package, smoke_test 16/16 passing)
+  - [x] Wikipedia fetcher (`lore/fetchers/wikipedia.py`, ~110 curated articles)
+  - [x] Light Into Ashes fetcher (`lore/fetchers/lia.py`, ~200 essays + primary sources)
+  - [x] Books fetcher (`lore/fetchers/books.py`, EPUB library)
+  - [x] Song-name matching (`lore/song_matcher.py`, `lore/match_songs.py`)
+  - [x] MCP tools: `dead_lore` + `dead_ask` in homelab-mcp/tools/deaddb.py
+  - [x] Router (`lore/router.py`) — entity extraction + hybrid retrieval + followup suggestions
+  - [ ] **Deadcast fetcher** — DEFERRED. Spec at `lore/SPEC_deadcast_DEFERRED.md`.
+        Blocked on confirming whether transcripts exist as text or need Whisper.
+        iGPU (reserved for Immich) would be needed for Whisper path.
 
 ## Phase 3 locked design decisions (do not relitigate)
 
@@ -44,56 +48,67 @@ and ask before changing it.
 - **raw_text** is stored in the documents table — trades ~50-200 MB of
   disk for the ability to re-chunk without re-scraping.
 - **Code location:** dead-db/lore/ subdirectory in this repo. MCP tools
-  will land in homelab-mcp/tools/deaddb.py alongside existing dead tools.
+  live in homelab-mcp/tools/deaddb.py alongside existing dead tools.
 - **Schema split:** plain DDL in schema.sql, vec0 virtual table created
   in db.py (requires sqlite-vec extension loaded first).
 - **Hard fail on model mismatch:** meta table records the embedding
   model + dim; init_schema raises if config disagrees with what's in
   the DB. Mismatched vectors silently produce wrong retrieval.
+- **Source caps in router:** lia_essays ≤3, wikipedia ≤2, book ≤2 per
+  query. Prevents any single corpus dominating results.
+- **Hybrid retrieval:** entity filter (dates/songs/era) applied as hard
+  WHERE when entities are extracted; pure vector fallback otherwise.
 
-## Phase 3 next: Wikipedia fetcher
+## MCP tool inventory (13 total)
 
-The reason Wikipedia goes before LIA: clean API, no rate-limit dance, no
-HTML parsing. It validates the fetcher pattern and exposes real chunking
-quality on real text — both signals you want before committing to LIA's
-Blogspot scrape.
+### Setlist/archive tools (homelab-mcp/tools/deaddb.py)
+dead_stats, dead_setlist, dead_song_history, dead_shows, dead_plex_library,
+dead_show_recordings, dead_this_date, dead_song_stats, dead_segues,
+dead_run, dead_rare_songs
 
-Open questions for that spec:
-- Curated article list or category crawl? (Leaning curated — ~200-400
-  hand-picked articles: every studio album, every member, key shows,
-  every tour, key songs. Quality over coverage.)
-- Plain text via Wikipedia API's `extracts` endpoint, or full wikitext
-  parsed with mwparserfromhell? (Extracts is simpler; wikitext keeps
-  structure for better chunking.)
-- How to handle disambiguation pages and stubs? (Skip stubs; resolve
-  disambiguation pages by picking the band-context article.)
+### Lore tools (homelab-mcp/tools/deaddb.py)
+dead_lore — raw semantic search, optional source filter
+dead_ask  — entity-aware router: extracts dates/songs/era, hybrid retrieval,
+            returns chunks + suggested SQL followup calls
 
 ## Repo layout (current)
-
-```
 dead-db/
   README.md
-  CLAUDE.md                # this file
-  SPEC.md                  # archived — moved to lore/SPEC.md after phase 3 scaffolding
-  build_db.py              # phase 1: gdshowsdb YAML -> shows/performances
-  plex.py                  # phase 1: Plex library -> plex_albums
-  scrape_archive.py        # phase 4: archive.org cursor scrape
-  build_archive.py         # phase 4: scrape -> archive_recordings
+  CLAUDE.md                  # this file
+  build_db.py                # phase 1: gdshowsdb YAML -> shows/performances
+  plex.py                    # phase 1: Plex library -> plex_albums
+  scrape_archive.py          # phase 4: archive.org cursor scrape
+  build_archive.py           # phase 4: scrape -> archive_recordings
   requirements.txt
-  unresolved_titles.log    # the 119 Plex albums without a dateable title
-  lore/                    # phase 3
-    SPEC.md                # phase 3 scaffolding spec (locked, complete)
-    config.py              # EMBEDDING_MODEL, EMBEDDING_DIM, paths
-    schema.sql             # documents, chunks, meta tables
-    db.py                  # connect() + init_schema() with sqlite-vec
-    embed.py               # bge-small wrapper, lazy-loaded
-    normalize.py           # RawDocument -> Chunk (paragraph merge, ~512 tokens)
-    build_lore_db.py       # orchestrator (idempotent at source_id grain)
-    query.py               # search(query, k) -> ChunkResult
-    smoke_test.py          # passes: OK: 3 docs, 3 chunks, Cornell top
+  unresolved_titles.log      # 119 Plex albums without a dateable title (expected)
+  lore/                      # phase 3: RAG lore pipeline
+    SPEC.md                  # scaffolding spec (locked, complete, historical)
+    SPEC_wikipedia.md        # wikipedia fetcher spec (complete)
+    SPEC_lia.md              # LIA fetcher spec (complete)
+    SPEC_books.md            # books fetcher spec (complete)
+    SPEC_song_matching.md    # song matching spec (complete)
+    SPEC_mcp_tools.md        # MCP tools spec (complete)
+    SPEC_deadcast_DEFERRED.md  # Deadcast — deferred, pending transcript confirmation
+    config.py
+    schema.sql
+    db.py
+    embed.py
+    normalize.py
+    build_lore_db.py
+    query.py
+    router.py
+    song_matcher.py
+    match_songs.py
+    smoke_test.py            # 16/16 passing
+    articles.txt             # curated Wikipedia article list
+    song_aliases.txt         # song name aliases for fuzzy matching
+    song_stopwords.txt       # stopwords for song matching
     fetchers/
-      _base.py             # Fetcher ABC, RawDocument dataclass
-```
+      _base.py
+      _html.py
+      lia.py
+      wikipedia.py
+      books.py
 
 ## How phase work happens
 
@@ -109,3 +124,15 @@ The pattern that's working:
 
 Resist the urge to skip step 2 for "small" phases. The spec is what
 prevents drift; small phases drift hardest because they feel safe.
+
+## What's next
+
+Deadcast fetcher is the only remaining phase 3 item. Before speccing it:
+- Confirm whether Deadcast publishes transcripts as text (check their
+  website/RSS) or whether transcripts would require Whisper on the audio.
+- If Whisper: confirm iGPU availability (currently reserved for Immich)
+  and whether a CPU-only Whisper run is acceptable for a one-time ingest.
+
+After Deadcast (or if deferred indefinitely): project is feature-complete.
+Possible future work: refresh fetchers periodically, tune chunk size,
+swap embedding model if retrieval quality degrades.
