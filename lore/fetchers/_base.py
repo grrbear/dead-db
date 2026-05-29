@@ -1,7 +1,13 @@
 """Common interface every source-specific fetcher implements."""
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Iterator
+
+
+@dataclass
+class Section:
+    heading: str   # e.g. "Early life", "Legacy"; "" for lead/intro
+    text: str      # clean plain text of this section only
 
 
 @dataclass
@@ -12,6 +18,8 @@ class RawDocument:
     url: str
     published: str | None  # ISO date if known, else None
     raw_text: str          # cleaned plain text, no HTML
+    sections: list[Section] | None = None  # structural hint; None if flat
+    metadata: dict | None = None           # JSON-serializable per-doc data (books: author/year/genre/isbn)
 
 
 class Fetcher(ABC):

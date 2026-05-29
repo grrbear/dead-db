@@ -1,0 +1,278 @@
+# Grateful Dead — curated Wikipedia article list for lore RAG.
+# One article title per line. '#' starts a comment. Blank lines ignored.
+# Titles must match Wikipedia exactly (incl. parenthetical disambiguators).
+# Misses are logged to wikipedia_unresolved.log — fix titles here and re-run.
+
+# === The band ===
+Grateful Dead
+
+# === Studio albums ===
+The Grateful Dead (album)
+Anthem of the Sun
+Aoxomoxoa
+Workingman's Dead
+American Beauty
+Wake of the Flood
+From the Mars Hotel
+Blues for Allah
+Terrapin Station (album)
+Shakedown Street (album)
+Go to Heaven (album)
+In the Dark (Grateful Dead album)
+Built to Last (album)
+
+# === Live albums (selected canon) ===
+Live/Dead
+Grateful Dead (1971 album)
+Europe '72
+Steal Your Face
+Reckoning (Grateful Dead album)
+Dead Set
+Without a Net
+Dick's Picks
+Dick's Picks Volume 1
+Dick's Picks Volume 2
+Dick's Picks Volume 3
+Dick's Picks Volume 4
+Dick's Picks Volume 5
+Dick's Picks Volume 6
+Dick's Picks Volume 7
+Dick's Picks Volume 8
+Dick's Picks Volume 9
+Dick's Picks Volume 10
+Dick's Picks Volume 11
+Dick's Picks Volume 12
+Dick's Picks Volume 13
+Dick's Picks Volume 14
+Dick's Picks Volume 15
+Dick's Picks Volume 16
+Dick's Picks Volume 17
+Dick's Picks Volume 18
+Dick's Picks Volume 19
+Dick's Picks Volume 20
+Dick's Picks Volume 21
+Dick's Picks Volume 22
+Dick's Picks Volume 23
+Dick's Picks Volume 24
+Dick's Picks Volume 25
+Dick's Picks Volume 26
+Dick's Picks Volume 27
+Dick's Picks Volume 28
+Dick's Picks Volume 29
+Dick's Picks Volume 30
+Dick's Picks Volume 31
+Dick's Picks Volume 32
+Dick's Picks Volume 33
+Dick's Picks Volume 34
+Dick's Picks Volume 35
+Dick's Picks Volume 36
+Dave's Picks
+Dave's Picks Volume 1
+Dave's Picks Volume 2
+Dave's Picks Volume 3
+Dave's Picks Volume 4
+Dave's Picks Volume 5
+Dave's Picks Volume 6
+Dave's Picks Volume 7
+Dave's Picks Volume 8
+Dave's Picks Volume 9
+Dave's Picks Volume 10
+Dave's Picks Volume 11
+Dave's Picks Volume 12
+Dave's Picks Volume 13
+Dave's Picks Volume 14
+Dave's Picks Volume 15
+Dave's Picks Volume 16
+Dave's Picks Volume 17
+Dave's Picks Volume 18
+Dave's Picks Volume 19
+Dave's Picks Volume 20
+Dave's Picks Volume 21
+Dave's Picks Volume 22
+Dave's Picks Volume 23
+Dave's Picks Volume 24
+Dave's Picks Volume 25
+Dave's Picks Volume 26
+Dave's Picks Volume 27
+Dave's Picks Volume 28
+Dave's Picks Volume 29
+Dave's Picks Volume 30
+Dave's Picks Volume 31
+Dave's Picks Volume 32
+Dave's Picks Volume 33
+Dave's Picks Volume 34
+Dave's Picks Volume 35
+Dave's Picks Volume 36
+Dave's Picks Volume 37
+Dave's Picks Volume 38
+Dave's Picks Volume 39
+Dave's Picks Volume 40
+Dave's Picks Volume 41
+Dave's Picks Volume 42
+Dave's Picks Volume 43
+Dave's Picks Volume 44
+Dave's Picks Volume 45
+Dave's Picks Volume 46
+Dave's Picks Volume 47
+Dave's Picks Volume 48
+Dave's Picks Volume 49
+Dave's Picks Volume 50
+Dave's Picks Volume 51
+Dave's Picks Volume 52
+Dave's Picks Volume 53
+Dave's Picks Volume 54
+Dave's Picks Volume 55
+Sunshine Daydream (album)
+Cornell 5/8/77
+
+# === Band members ===
+Jerry Garcia
+Bob Weir
+Phil Lesh
+Bill Kreutzmann
+Mickey Hart
+Ron "Pigpen" McKernan
+Keith Godchaux
+Donna Jean Godchaux
+Brent Mydland
+Vince Welnick
+Bruce Hornsby
+Tom Constanten
+Robert Hunter (lyricist)
+John Perry Barlow
+
+# === Family tree / side projects ===
+Jerry Garcia Band
+New Riders of the Purple Sage
+Old & In the Way
+Legion of Mary (band)
+Reconstruction (band)
+Kingfish (band)
+Bobby and the Midnites
+Ratdog
+The Other Ones
+The Dead (band)
+Furthur (band)
+Dead & Company
+Rhythm Devils
+Planet Drum
+Mickey Hart Band
+Phil Lesh and Friends
+The Mountain Girl
+Merry Pranksters
+
+# === Venues & live sound ===
+Wall of Sound (Grateful Dead)
+Fillmore West
+Fillmore East
+Winterland Ballroom
+Barton Hall
+The Warlocks (American band)
+
+# === Songs (selected) ===
+Truckin'
+Casey Jones (Grateful Dead song)
+Friend of the Devil
+Ripple (song)
+Box of Rain
+Sugar Magnolia
+Uncle John's Band
+Dark Star (Grateful Dead song)
+Terrapin Station (suite)
+Touch of Grey
+Scarlet Begonias
+Fire on the Mountain (Grateful Dead song)
+Eyes of the World
+St. Stephen (song)
+China Cat Sunflower
+Morning Dew (song)
+Playing in the Band
+Estimated Prophet
+Help on the Way
+He's Gone (song)
+Franklin's Tower
+Sugaree (song)
+Jack Straw (song)
+Alabama Getaway
+Throwing Stones (song)
+Stella Blue
+One More Saturday Night
+Dire Wolf (song)
+Bertha (Grateful Dead song)
+Deal (Grateful Dead song)
+Row Jimmy
+Ramble On Rose
+Black Peter (song)
+Not Fade Away (song)
+Going Down the Road Feeling Bad
+Brown Eyed Women
+The Music Never Stopped
+Candyman (Grateful Dead song)
+Cassidy (song)
+Comes a Time (song)
+Shakedown Street (song)
+Feel Like a Stranger
+
+# === Jerry Garcia solo ===
+Garcia (album)
+Hooteroll?
+Compliments (album)
+Cats Under the Stars
+Run for the Roses (album)
+
+# === Bob Weir solo ===
+Ace (Bob Weir album)
+Heaven Help the Fool (album)
+
+# === Mickey Hart solo ===
+Rolling Thunder (album)
+Drumming at the Edge of Magic
+
+# === Grateful Dead records / labels ===
+Grateful Dead Records
+Round Records
+
+# === Shows & events ===
+Watkins Glen Summer Jam
+Summer of Love
+Trips Festival
+Ken Kesey
+Further (bus)
+Altamont Free Concert
+Monterey Pop Festival
+Woodstock
+
+# === Venues ===
+Red Rocks Amphitheatre
+Soldier Field
+Greek Theatre (Berkeley)
+Capital Centre
+
+# === Genre / context ===
+Psychedelic rock
+San Francisco sound
+Counterculture of the 1960s
+Warner Bros. Records
+Arista Records
+
+# === Scene / culture / legacy ===
+Deadhead
+Acid Tests
+The Electric Kool-Aid Acid Test
+Haight-Ashbury
+Wall of Sound
+Rex Foundation
+Owsley Stanley
+Bill Graham (promoter)
+Jerry Garcia's guitars
+Steal Your Face (logo)
+Dancing bears (Grateful Dead)
+Sunshine Daydream
+Festival Express
+The Grateful Dead Movie
+Long Strange Trip (film)
+Golden Gate Park
+Bear's Choice
+One from the Vault
+Two from the Vault
+So Many Roads (1965–1995)

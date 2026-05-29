@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS documents (
     published   TEXT,                 -- ISO date if known
     fetched_at  TEXT NOT NULL,        -- ISO datetime of fetch
     raw_text    TEXT NOT NULL,        -- cleaned plain text, no HTML
+    metadata    TEXT,                 -- JSON: per-doc metadata (e.g. book author/year/genre). NULL for corpora that don't use it.
     UNIQUE(source, source_id)
 );
 
@@ -29,6 +30,7 @@ CREATE TABLE IF NOT EXISTS chunks (
     mentioned_dates TEXT,                -- JSON array of YYYY-MM-DD
     mentioned_songs TEXT,                -- JSON array of canonical song names
     era             TEXT,                -- '60s'|'pigpen'|'keith'|'brent'|'bruce'|NULL
+    section         TEXT,                -- source section heading this chunk came from, NULL if flat
     UNIQUE(document_id, chunk_index)
 );
 

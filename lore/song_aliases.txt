@@ -1,0 +1,51 @@
+# Hand-curated abbreviations for famously-shortened Dead canon.
+# alias = Canonical Song Name (must match dead.db.songs.name exactly)
+# Edit and re-run match_songs.py — matcher is idempotent.
+
+# === Standalone common abbreviations ===
+Scarlet = Scarlet Begonias
+Fire on the Mountain = Fire On The Mountain
+Fire = Fire On The Mountain
+Other One = The Other One
+St. Stephen = Saint Stephen
+Saint Stephen = Saint Stephen
+St Stephen = Saint Stephen
+Eyes of the World = Eyes Of The World
+Eyes = Eyes Of The World
+Playin' = Playing In The Band
+Playing in the Band = Playing In The Band
+Help on the Way = Help On The Way
+Franklin's Tower = Franklin's Tower
+Franklin's = Franklin's Tower
+Truckin = Truckin'
+Sugar Mag = Sugar Magnolia
+Mexicali = Mexicali Blues
+Cumberland = Cumberland Blues
+Uncle John's = Uncle John's Band
+UJB = Uncle John's Band
+Box of Rain = Box Of Rain
+Friend of the Devil = Friend Of The Devil
+FOTD = Friend Of The Devil
+Brokedown = Brokedown Palace
+Ship of Fools = Ship Of Fools
+Comes a Time = Comes A Time
+Estimated = Estimated Prophet
+Terrapin = Terrapin Station
+Iko = Iko Iko
+GDTRFB = Goin' Down The Road Feelin' Bad
+Goin' Down the Road = Goin' Down The Road Feelin' Bad
+Cold Rain and Snow = Cold Rain And Snow
+Me and My Uncle = Me And My Uncle
+Touch of Grey = Touch Of Grey
+Touch of Gray = Touch Of Grey
+Hell in a Bucket = Hell In A Bucket
+Standing on the Moon = Standing On The Moon
+Built to Last = Built To Last
+
+# === Pigpen-era ===
+Lovelight = Turn On Your Lovelight
+NFA = Not Fade Away
+
+# === Short era handles ===
+West LA = West L.A. Fadeaway
+Around and Around = Around And Around

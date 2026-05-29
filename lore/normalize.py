@@ -1,14 +1,11 @@
-"""RawDocument -> list[Chunk]. Dumb-but-reasonable chunking for v1.
-
-mentioned_songs stays empty in this phase; song matching against
-dead.db.songs lands in a later phase along with the real fetchers.
-"""
+"""RawDocument -> list[Chunk]. Dumb-but-reasonable chunking for v1."""
 import re
 from dataclasses import dataclass
 from datetime import datetime
 
 from .config import CHUNK_SIZE, CHUNK_OVERLAP
 from .fetchers._base import RawDocument
+from .song_matcher import match_songs, to_json_list
 
 DATE_RE = re.compile(r"\b(19[6-9]\d|20\d\d)-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])\b")
 
@@ -20,6 +17,7 @@ class Chunk:
     mentioned_dates: list[str]
     mentioned_songs: list[str]
     era: str | None
+    section: str | None        # source section heading, None if flat
 
 
 def _approx_tokens(s: str) -> int:
@@ -42,13 +40,12 @@ def _era_for(dates: list[str]) -> str | None:
     return None
 
 
-def normalize(doc: RawDocument) -> list[Chunk]:
-    """Split on paragraph boundaries, then merge to ~CHUNK_SIZE tokens with overlap."""
-    paras = [p.strip() for p in re.split(r"\n\s*\n", doc.raw_text) if p.strip()]
+def _chunk_paras(paras: list[str], start_idx: int, section: str | None) -> list[Chunk]:
+    """Merge paragraphs into ~CHUNK_SIZE token chunks with overlap."""
     chunks: list[Chunk] = []
     buf: list[str] = []
     buf_tokens = 0
-    idx = 0
+    idx = start_idx
 
     def flush():
         nonlocal buf, buf_tokens, idx
@@ -58,8 +55,8 @@ def normalize(doc: RawDocument) -> list[Chunk]:
         dates = sorted({m.group(0) for m in DATE_RE.finditer(text)})
         chunks.append(Chunk(
             chunk_index=idx, text=text,
-            mentioned_dates=dates, mentioned_songs=[],
-            era=_era_for(dates),
+            mentioned_dates=dates, mentioned_songs=to_json_list(match_songs(text)),
+            era=_era_for(dates), section=section,
         ))
         idx += 1
         # overlap: keep tail paragraphs ~CHUNK_OVERLAP tokens
@@ -78,4 +75,22 @@ def normalize(doc: RawDocument) -> list[Chunk]:
         buf.append(p); buf_tokens += pt
 
     flush()
+    return chunks
+
+
+def normalize(doc: RawDocument) -> list[Chunk]:
+    """Split on paragraph boundaries, then merge to ~CHUNK_SIZE tokens with overlap.
+
+    If doc.sections is present, chunks never cross section boundaries and each
+    chunk is tagged with its section heading. Otherwise flat: section=None.
+    """
+    if doc.sections is None:
+        paras = [p.strip() for p in re.split(r"\n\s*\n", doc.raw_text) if p.strip()]
+        return _chunk_paras(paras, start_idx=0, section=None)
+
+    chunks: list[Chunk] = []
+    for sec in doc.sections:
+        paras = [p.strip() for p in re.split(r"\n\s*\n", sec.text) if p.strip()]
+        sec_chunks = _chunk_paras(paras, start_idx=len(chunks), section=sec.heading)
+        chunks.extend(sec_chunks)
     return chunks
