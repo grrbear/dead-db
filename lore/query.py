@@ -15,6 +15,7 @@ class ChunkResult:
     source: str
     title: str
     url: str
+    section: str | None
     mentioned_dates: list[str]
     mentioned_songs: list[str]
     era: str | None
@@ -28,7 +29,7 @@ def search(query: str, *, k: int = 5, source: str | None = None,
 
     sql = """
         SELECT v.chunk_id, v.distance,
-               c.text, c.mentioned_dates, c.mentioned_songs, c.era,
+               c.text, c.section, c.mentioned_dates, c.mentioned_songs, c.era,
                d.source, d.title, d.url
         FROM chunk_vectors v
         JOIN chunks c    ON c.id = v.chunk_id
@@ -46,9 +47,9 @@ def search(query: str, *, k: int = 5, source: str | None = None,
     conn.close()
     return [
         ChunkResult(
-            chunk_id=r[0], distance=r[1], text=r[2],
-            mentioned_dates=json.loads(r[3] or "[]"),
-            mentioned_songs=json.loads(r[4] or "[]"),
-            era=r[5], source=r[6], title=r[7], url=r[8],
+            chunk_id=r[0], distance=r[1], text=r[2], section=r[3],
+            mentioned_dates=json.loads(r[4] or "[]"),
+            mentioned_songs=json.loads(r[5] or "[]"),
+            era=r[6], source=r[7], title=r[8], url=r[9],
         ) for r in rows
     ]
