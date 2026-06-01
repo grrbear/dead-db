@@ -1,0 +1,257 @@
+# HeadyVersion alias proposals — review carefully before adding to song_aliases.txt
+# Format: hv name = canonical name
+# Lines starting with # are comments.
+
+# 524 rows — HV: "Playin' In The Band"
+#   suggest: "playing in the band" (0.95), "playing in the band reprise" (0.78), "mission in the rain" (0.63)
+Playin' In The Band = playing in the band
+
+# 236 rows — HV: "New Minglewood Blues"
+#   suggest: "minglewood blues" (0.89)
+New Minglewood Blues = minglewood blues
+
+# 210 rows — HV: "Turn On Your Love Light"
+#   suggest: "turn on your lovelight" (0.98)
+Turn On Your Love Light = turn on your lovelight
+
+# 200 rows — HV: "Mississippi Halfstep Uptown Toodeloo"
+#   suggest: "mississippi half step" (0.70)
+Mississippi Halfstep Uptown Toodeloo = mississippi half step
+
+# 145 rows — HV: "U.S. Blues (Wave That Flag)"
+#   suggest: "wave that flag" (0.68)
+U.S. Blues (Wave That Flag) = wave that flag
+
+# 125 rows — HV: "Aiko Aiko"
+#   suggest: "iko iko" (0.88)
+Aiko Aiko = iko iko
+
+# 100 rows — HV: "Man Smart, Woman Smarter"
+#   suggest: "man smart (woman smarter)" (0.94)
+Man Smart, Woman Smarter = man smart (woman smarter)
+
+# 84 rows — HV: "Jack A Roe"
+#   suggest: "jack-a-roe" (0.80), "jack straw" (0.60)
+Jack A Roe = jack-a-roe
+
+# 74 rows — HV: "Brother Esau"
+#   suggest: "my brother esau" (0.89)
+Brother Esau = my brother esau
+
+# 71 rows — HV: "C. C. Rider"
+#   suggest: "c.c. rider" (0.95)
+C. C. Rider = c.c. rider
+
+# 59 rows — HV: "Weather Report Suite"
+#   suggest: "weather report suite part 1" (0.85), "weather report suite prelude" (0.83)
+Weather Report Suite = weather report suite part 1
+
+# 49 rows — HV: "And We Bid You Goodnight"
+#   suggest: "and we bid you good night" (0.98), "and we bid you good night jam" (0.91)
+And We Bid You Goodnight = and we bid you good night
+
+# 49 rows — HV: "Walking Blues"
+#   suggest: "walkin' blues" (0.92), "how long blues" (0.74), "workin' man blues" (0.67)
+Walking Blues = walkin' blues
+
+# 46 rows — HV: "All New Minglewood Blues"
+#   suggest: "minglewood blues" (0.80)
+All New Minglewood Blues = minglewood blues
+
+# 46 rows — HV: "Mister Charlie"
+#   suggest: "mr. charlie" (0.80), "cosmic charlie" (0.71)
+Mister Charlie = mr. charlie
+
+# 44 rows — HV: "Smokestack Lightnin'"
+#   suggest: "smokestack lightning" (0.95), "smokestack lightnin' jam" (0.91)
+Smokestack Lightnin' = smokestack lightning
+
+# 39 rows — HV: "Days Between"
+#   suggest: "the days between" (0.86)
+Days Between = the days between
+
+# 35 rows — HV: "The Mighty Quinn (Quinn The Eskimo)"
+#   suggest: "quinn the eskimo" (0.63)
+The Mighty Quinn (Quinn The Eskimo) = quinn the eskimo
+
+# 31 rows — HV: "Last Time"
+#   suggest: "the last time" (0.82)
+Last Time = the last time
+
+# 29 rows — HV: "King Bee"
+#   suggest: "i'm a king bee" (0.73), "big boy pete" (0.60)
+King Bee = i'm a king bee
+
+# 24 rows — HV: "Take A Step Back"
+#   suggest: "take a step back tuning" (0.82)
+Take A Step Back = take a step back tuning
+
+# 19 rows — HV: "100000 Tons of Steel"
+#   suggest: "tons of steel" (0.79)
+100000 Tons of Steel = tons of steel
+
+# 19 rows — HV: "Hey Jude Finale"
+#   suggest: "hey jude" (0.70), "hey jude reprise" (0.71)
+Hey Jude Finale = hey jude
+
+# 16 rows — HV: "You Ain't Woman Enough To Take My Man"
+#   suggest: "you ain't woman enough" (0.75)
+You Ain't Woman Enough To Take My Man = you ain't woman enough
+
+# 14 rows — HV: "Rosalie McFall"
+#   suggest: "rosa lee mcfall" (0.90)
+Rosalie McFall = rosa lee mcfall
+
+# 10 rows — HV: "Oh Babe It Ain't No Lie"
+#   suggest: "oh babe, it ain't no lie" (0.98)
+Oh Babe It Ain't No Lie = oh babe, it ain't no lie
+
+# 9 rows — HV: "Catfish John"
+#   suggest: "caution" (0.63), "casey jones" (0.61)
+Catfish John = catfish john
+
+# 9 rows — HV: "Darkness Jam"
+#   suggest: "dark star jam" (0.72), "darkness, darkness jam" (0.71)
+Darkness Jam = darkness
+
+# 8 rows — HV: "Born Cross Eyed"
+#   suggest: "born cross-eyed" (0.93)
+Born Cross Eyed = born cross-eyed
+
+# 8 rows — HV: "Rubin and Cherise"
+#   suggest: "reuben and cherise" (0.91)
+Rubin and Cherise = reuben and cherise
+
+# 8 rows — HV: "Swing Low Sweet Chariot"
+#   suggest: "swing low, sweet chariot" (0.98)
+Swing Low Sweet Chariot = swing low, sweet chariot
+
+# 7 rows — HV: "Bo Diddley"
+#   suggest: "hey bo diddley" (0.83), "tom dooley" (0.60)
+Bo Diddley = hey bo diddley
+
+# 7 rows — HV: "Louie"
+#   suggest: "louie louie" (0.62), "loser" (0.60)
+Louie = louie louie
+
+# 7 rows — HV: "Run Run Rudolph"
+#   suggest: "run rudolph run" (0.73)
+Run Run Rudolph = run rudolph run
+
+# 7 rows — HV: "The Harder They Come"
+#   suggest: "the other one" (0.55), "from the heart of me" (0.55)
+The Harder They Come = the other one
+
+# 6 rows — HV: "Quin The Eskimo"
+#   suggest: "quinn the eskimo" (0.97), "in the pines" (0.67)
+Quin The Eskimo = quinn the eskimo
+
+# 6 rows — HV: "The Frozen Logger"
+#   suggest: "frozen logger" (0.87)
+The Frozen Logger = frozen logger
+
+# 5 rows — HV: "Got My Mojo Working"
+#   suggest: "i got my mojo workin'" (0.90)
+Got My Mojo Working = i got my mojo workin'
+
+# 4 rows — HV: "High Heeled Sneakers"
+#   suggest: "hi-heel sneakers" (0.83)
+High Heeled Sneakers = hi-heel sneakers
+
+# 4 rows — HV: "I Hear A Voice Calling"
+#   suggest: "i hear a voice callin'" (0.95)
+I Hear A Voice Calling = i hear a voice callin'
+
+# 4 rows — HV: "I Just Wanna Make Love To You"
+#   suggest: "i just want to make love to you" (0.90)
+I Just Wanna Make Love To You = i just want to make love to you
+
+# 3 rows — HV: "Cocaine Habit Blues"
+#   suggest: "workin' man blues" (0.61)
+Cocaine Habit Blues = workin' man blues
+
+# 3 rows — HV: "I'm A Hog For You"
+#   suggest: "hog for you baby" (0.67)
+I'm A Hog For You = hog for you baby
+
+# 3 rows — HV: "Lazy Lightnin'"
+#   suggest: "lazy lightning" (0.93)
+Lazy Lightnin' = lazy lightning
+
+# 3 rows — HV: "Money"
+#   suggest: "mona" (0.67), "joey" (0.67), "money money" (0.62)
+Money = money money
+
+# 3 rows — HV: "Road Runner"
+#   suggest: "(i'm a) road runner" (0.73)
+Road Runner = (i'm a) road runner
+
+# 3 rows — HV: "That's All Right"
+#   suggest: "that's alright mama" (0.80)
+That's All Right = that's alright mama
+
+# 3 rows — HV: "Tore Up Over You"
+#   suggest: "forever young" (0.69), "easy to love you" (0.62)
+Tore Up Over You = forever young
+
+# 2 rows — HV: "Dear Prudence"
+#   suggest: "dear prudence jam" (0.87)
+Dear Prudence = dear prudence jam
+
+# 2 rows — HV: "Devil With The Blue Dress On"
+#   suggest: "devil with the blue dress" (0.94)
+Devil With The Blue Dress On = devil with the blue dress
+
+# 2 rows — HV: "I'll Take A Melody"
+#   suggest: "i will take you home" (0.63)
+I'll Take A Melody = i will take you home
+
+# 2 rows — HV: "Logger Song"
+#   suggest: "bird song" (0.60)
+Logger Song = bird song
+
+# 2 rows — HV: "So Far From Me"
+#   suggest: "far from me" (0.88)
+So Far From Me = far from me
+
+# 2 rows — HV: "The Golden Road (to unlimited devotion)"
+#   suggest: "golden road to unlimited devotion" (0.92)
+The Golden Road (to unlimited devotion) = golden road to unlimited devotion
+Golden Road = golden road to umlimited devotion
+
+# 1 rows — HV: "Don't Think Twice"
+#   suggest: "don't think twice it's alright" (0.72)
+Don't Think Twice = don't think twice it's alright
+
+# 1 rows — HV: "France"
+#   suggest: "rain" (0.60)
+France = rain
+
+# 1 rows — HV: "I Wash My Hands"
+#   suggest: "i washed my hands in muddy water" (0.64)
+I Wash My Hands = i washed my hands in muddy water
+
+# 1 rows — HV: "Midnight Moonlight"
+#   suggest: "midnight hour" (0.65)
+Midnight Moonlight = midnight moonlight
+
+# 1 rows — HV: "My Baby"
+#   suggest: "my babe" (0.86), "my baby left me" (0.64)
+My Baby = my babe
+
+# 1 rows — HV: "Oakie From Muskogee"
+#   suggest: "okie from muskogee" (0.97), "far from me" (0.60)
+Oakie From Muskogee = okie from muskogee
+
+# 1 rows — HV: "One Thing To Try"
+#   suggest: "one kind favor" (0.60)
+One Thing To Try = one kind favor
+
+# 1 rows — HV: "Wining Boy Blues"
+#   suggest: "winin' boy blues" (0.94), "minglewood blues" (0.62), "walkin' blues" (0.62)
+Wining Boy Blues = winin' boy blues
+
+# 1 rows — HV: "Youngblood"
+#   suggest: "young blood" (0.95)
+Youngblood = young blood
+

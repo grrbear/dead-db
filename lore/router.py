@@ -247,14 +247,17 @@ class FollowupSuggestion:
 # entity-kind -> [(tool_name, arg_builder, reason)]
 # arg_builder is a lambda(entity_value) -> dict.
 # Tool names match existing phase-2 MCP tools in homelab-mcp/tools/deaddb.py.
+_FOLLOWUP_BY_SONG = [
+    ("dead_song_history", lambda s: {"song": s}, "Every performance of this song"),
+    ("dead_song_stats",   lambda s: {"song": s}, "Statistics for this song"),
+    ("dead_top_versions", lambda s: {"song_name": s},
+     "Top community-voted versions of this song from HeadyVersion"),
+]
 _FOLLOWUP_BY_DATE = [
     ("dead_setlist",         lambda d: {"date": d},  "Question mentions a specific show date"),
     ("dead_show_recordings", lambda d: {"date": d},  "Show how to hear this show"),
     ("dead_run",             lambda d: {"date": d},  "Adjacent shows give tour context"),
-]
-_FOLLOWUP_BY_SONG = [
-    ("dead_song_history", lambda s: {"song": s}, "Every performance of this song"),
-    ("dead_song_stats",   lambda s: {"song": s}, "Statistics for this song"),
+    ("dead_show_votes",      lambda d: {"date": d},  "Community-voted submissions from this show"),
 ]
 _FOLLOWUP_BY_YEAR = [
     ("dead_shows", lambda y: {"year": y}, "All shows in this year"),
