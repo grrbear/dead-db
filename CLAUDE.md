@@ -9,7 +9,7 @@ and which design decisions are locked (so they're not relitigated).
 A normalized SQLite database of Grateful Dead setlists, joined to my Plex
 music library and archive.org recordings, with structured questions
 answered by SQL and lore/insight questions answered by RAG. Exposed as
-13 MCP tools via homelab-mcp.
+15 MCP tools via homelab-mcp.
 
 See README.md for end-user-facing description. This file is for picking
 up development between sessions.
@@ -29,6 +29,10 @@ up development between sessions.
   - [x] Song-name matching (`lore/song_matcher.py`, `lore/match_songs.py`)
   - [x] MCP tools: `dead_lore` + `dead_ask` in homelab-mcp/tools/deaddb.py
   - [x] Router (`lore/router.py`) — entity extraction + hybrid retrieval + followup suggestions
+  - [x] HeadyVersion ingest (`build_headyversion.py`, `lore/fetchers/headyversion.py`)
+        25,012 community votes in `dead.db.community_votes`; 93% resolved to song_uuid;
+        segue entries (China>Rider etc.) mapped to first-song UUID.
+        MCP tools: `dead_top_versions` + `dead_show_votes`.
   - [ ] **Deadcast fetcher** — DEFERRED. Spec at `lore/SPEC_deadcast_DEFERRED.md`.
         Blocked on confirming whether transcripts exist as text or need Whisper.
         iGPU (reserved for Immich) would be needed for Whisper path.
@@ -59,7 +63,7 @@ and ask before changing it.
 - **Hybrid retrieval:** entity filter (dates/songs/era) applied as hard
   WHERE when entities are extracted; pure vector fallback otherwise.
 
-## MCP tool inventory (13 total)
+## MCP tool inventory (15 total)
 
 ### Setlist/archive tools (homelab-mcp/tools/deaddb.py)
 dead_stats, dead_setlist, dead_song_history, dead_shows, dead_plex_library,
@@ -71,6 +75,11 @@ dead_lore — raw semantic search, optional source filter
 dead_ask  — entity-aware router: extracts dates/songs/era, hybrid retrieval,
             returns chunks + suggested SQL followup calls
 
+### Community votes tools (homelab-mcp/tools/deaddb.py)
+dead_top_versions — top HeadyVersion-voted performances of a song; JOINs
+                    shows + archive_recordings for venue/city/archive_id
+dead_show_votes   — all HV submissions for a date, sorted by vote score
+
 ## Repo layout (current)
 ```
 dead-db/
@@ -80,6 +89,7 @@ dead-db/
   plex.py                    # phase 1: Plex library -> plex_albums
   scrape_archive.py          # phase 4: archive.org cursor scrape
   build_archive.py           # phase 4: scrape -> archive_recordings
+  build_headyversion.py      # phase 3 addendum: HV scraper -> community_votes in dead.db
   requirements.txt
   unresolved_titles.log      # 119 Plex albums without a dateable title (expected)
   lore/                      # phase 3: RAG lore pipeline
@@ -89,7 +99,10 @@ dead-db/
     SPEC_books.md            # books fetcher spec (complete)
     SPEC_song_matching.md    # song matching spec (complete)
     SPEC_mcp_tools.md        # MCP tools spec (complete)
+    SPEC_headyversion.md       # HeadyVersion ingest spec (complete)
     SPEC_deadcast_DEFERRED.md  # Deadcast — deferred, pending transcript confirmation
+    build_headyversion_lore.py # lore-path build for HV blurbs -> dead_lore.db
+    headyversion_alias_proposals.txt  # HV->canonical alias proposals (human-reviewed)
     config.py
     schema.sql
     db.py
@@ -110,7 +123,34 @@ dead-db/
       lia.py
       wikipedia.py
       books.py
+      headyversion.py          # HV scraper (used by both build paths)
 ```
+
+### community_votes table (dead.db)
+
+Populated by `build_headyversion.py`. Upserts on submission_id — safe to re-run.
+
+```
+community_votes(
+    submission_id  INTEGER PK,
+    heady_song_id  INTEGER,      -- HV internal ID
+    song_uuid      TEXT,         -- NULL for unresolved/medley names
+    song_name      TEXT,         -- HV display name (html-unescaped)
+    show_date      TEXT,         -- ISO YYYY-MM-DD
+    venue          TEXT,         -- NULL; sourced via JOIN to shows at query time
+    city           TEXT,         -- NULL; ditto
+    vote_score     INTEGER,
+    blurb          TEXT,
+    heady_url      TEXT,
+    fetched_at     TEXT
+)
+```
+
+Key build decisions:
+- `fetch_show_meta=False` — venue/city/archive_id come from JOIN, not HTTP
+- Segue names (`A -> B`) resolved to first-song UUID via post-upsert pass
+- Medley names with `&` left unresolved (logged to `lore/headyversion_medleys_skipped.log`)
+- Rebuild: `python3 -m build_headyversion` (~25 min). If build_db.py wipes dead.db, re-run this.
 
 ## How phase work happens
 
