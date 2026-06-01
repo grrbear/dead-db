@@ -1,3 +1,7 @@
+> **SUPERSEDED by `SPEC_deadcast.md`** (local-HTML fetcher, built & shipped).
+> The "Whisper is the path forward" note below is obsolete: the transcripts
+> were saved as HTML by hand, which removed the WAF blocker. Kept for history.
+
 ---
 # DEFERRED — do not implement as written
 

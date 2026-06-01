@@ -138,19 +138,28 @@ def _entity_filter_sql(ents: ExtractedEntities) -> tuple[str, list]:
 
 
 PER_DOC_CAP = 2
-PER_SOURCE_CAP = 3
+# Per-source chunk caps for a single answer. Sources not listed fall back to
+# PER_SOURCE_CAP_DEFAULT. Prevents any one corpus dominating an answer.
+PER_SOURCE_CAP_DEFAULT = 3
+PER_SOURCE_CAP = {
+    "lia_essays": 3,
+    "wikipedia": 2,
+    "book": 4,
+    "deadcast": 4,
+}
 
 
 def _apply_caps(rows: list[RouterChunk], k: int) -> list[RouterChunk]:
-    """Diversity caps: max PER_DOC_CAP chunks/doc, PER_SOURCE_CAP chunks/source."""
+    """Diversity caps: max PER_DOC_CAP chunks/doc, per-source cap chunks/source."""
     by_doc: dict[str, int] = {}
     by_src: dict[str, int] = {}
     out: list[RouterChunk] = []
     for r in rows:
         doc_key = f"{r.source}::{r.title}"
+        src_cap = PER_SOURCE_CAP.get(r.source, PER_SOURCE_CAP_DEFAULT)
         if by_doc.get(doc_key, 0) >= PER_DOC_CAP:
             continue
-        if by_src.get(r.source, 0) >= PER_SOURCE_CAP:
+        if by_src.get(r.source, 0) >= src_cap:
             continue
         out.append(r)
         by_doc[doc_key] = by_doc.get(doc_key, 0) + 1

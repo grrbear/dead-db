@@ -59,8 +59,9 @@ and ask before changing it.
 - **Hard fail on model mismatch:** meta table records the embedding
   model + dim; init_schema raises if config disagrees with what's in
   the DB. Mismatched vectors silently produce wrong retrieval.
-- **Source caps in router:** lia_essays ≤3, wikipedia ≤2, book ≤2 per
-  query. Prevents any single corpus dominating results.
+- **Source caps in router:** per-source chunk caps per query — lia_essays 3,
+  wikipedia 2, book 4, deadcast 4; unlisted sources default 3; plus a per-doc
+  cap of 2. Prevents any single corpus dominating results.
 - **Hybrid retrieval:** entity filter (dates/songs/era) applied as hard
   WHERE when entities are extracted; pure vector fallback otherwise.
 
