@@ -33,9 +33,10 @@ up development between sessions.
         25,012 community votes in `dead.db.community_votes`; 93% resolved to song_uuid;
         segue entries (China>Rider etc.) mapped to first-song UUID.
         MCP tools: `dead_top_versions` + `dead_show_votes`.
-  - [ ] **Deadcast fetcher** — DEFERRED. Spec at `lore/SPEC_deadcast_DEFERRED.md`.
-        Blocked on confirming whether transcripts exist as text or need Whisper.
-        iGPU (reserved for Immich) would be needed for Whisper path.
+  - [x] Deadcast fetcher (`lore/fetchers/deadcast.py`, `lore/build_deadcast.py`)
+        Local-HTML path — saved dead.net transcript pages on NAS. No network, no Whisper.
+        10 episodes ingested (8 WD50 + 2 BONUS), 320 chunks. Idempotent; grows by
+        dropping more saved pages into DEADCAST_DIR and re-running build_deadcast.
 
 ## Phase 3 locked design decisions (do not relitigate)
 
@@ -100,8 +101,10 @@ dead-db/
     SPEC_song_matching.md    # song matching spec (complete)
     SPEC_mcp_tools.md        # MCP tools spec (complete)
     SPEC_headyversion.md       # HeadyVersion ingest spec (complete)
-    SPEC_deadcast_DEFERRED.md  # Deadcast — deferred, pending transcript confirmation
+    SPEC_deadcast.md           # Deadcast fetcher spec (complete)
+    SPEC_deadcast_DEFERRED.md  # old deferred spec (superseded, historical)
     build_headyversion_lore.py # lore-path build for HV blurbs -> dead_lore.db
+    build_deadcast.py          # Deadcast corpus build -> dead_lore.db
     headyversion_alias_proposals.txt  # HV->canonical alias proposals (human-reviewed)
     config.py
     schema.sql
@@ -124,6 +127,7 @@ dead-db/
       wikipedia.py
       books.py
       headyversion.py          # HV scraper (used by both build paths)
+      deadcast.py              # Deadcast local-HTML fetcher
 ```
 
 ### community_votes table (dead.db)
@@ -152,6 +156,22 @@ Key build decisions:
 - Medley names with `&` left unresolved (logged to `lore/headyversion_medleys_skipped.log`)
 - Rebuild: `python3 -m build_headyversion` (~25 min). If build_db.py wipes dead.db, re-run this.
 
+### Adding Deadcast episodes
+
+1. Save the dead.net transcript page (File → Save Page As → Web Page, Complete)
+   into `/hddpool/datastore/mediacenter/Audio/Deadcast/` on the NAS.
+   The browser creates `<name>.html` + `<name>_files/` — both are fine; only
+   the `.html` is read. macOS `._*` AppleDouble files are ignored automatically.
+2. On arrstack:
+   ```bash
+   cd /home/bear/dead-db
+   python3 -m lore.build_deadcast
+   ```
+   `ingest()` is idempotent on the canonical URL — existing episodes upsert
+   cleanly, the new one is added. No dedup or cleanup needed.
+3. Retrieval via `dead_lore`/`dead_ask` picks up the new chunks immediately
+   (no MCP restart required — the DB is read at query time).
+
 ## How phase work happens
 
 The pattern that's working:
@@ -169,12 +189,10 @@ prevents drift; small phases drift hardest because they feel safe.
 
 ## What's next
 
-Deadcast fetcher is the only remaining phase 3 item. Before speccing it:
-- Confirm whether Deadcast publishes transcripts as text (check their
-  website/RSS) or whether transcripts would require Whisper on the audio.
-- If Whisper: confirm iGPU availability (currently reserved for Immich)
-  and whether a CPU-only Whisper run is acceptable for a one-time ingest.
+Phase 3 is complete. Project is feature-complete.
 
-After Deadcast (or if deferred indefinitely): project is feature-complete.
-Possible future work: refresh fetchers periodically, tune chunk size,
-swap embedding model if retrieval quality degrades.
+Possible future work:
+- Add more Deadcast episodes as they're saved (see workflow above)
+- Refresh HeadyVersion votes: `python3 -m build_headyversion` (~25 min)
+- Tune chunk size or swap embedding model if retrieval quality degrades
+- Add more books to the EPUB library and re-run `lore/build_lore_db.py`
