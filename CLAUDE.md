@@ -34,7 +34,7 @@ up development between sessions.
         MCP tools: `dead_top_versions` + `dead_show_votes`.
   - [x] Deadcast fetcher (`lore/fetchers/deadcast.py`, `lore/build_deadcast.py`)
         Local-HTML path — saved dead.net transcript pages on NAS. No network, no Whisper.
-        38 episodes ingested, 2189 chunks. Idempotent; grows by
+        88 episodes ingested, 4866 chunks. Idempotent; grows by
         dropping more saved pages into DEADCAST_DIR and re-running build_deadcast.
 - [x] **Phase 5** — dead-mcp extraction: all 15 tools moved to dedicated server
       `dead_mcp/` in this repo, port 8768, https://dead-mcp.quickswoodcapital.com/mcp
