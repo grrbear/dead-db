@@ -9,7 +9,7 @@ and which design decisions are locked (so they're not relitigated).
 A normalized SQLite database of Grateful Dead setlists, joined to my Plex
 music library and archive.org recordings, with structured questions
 answered by SQL and lore/insight questions answered by RAG. Exposed as
-15 MCP tools via homelab-mcp.
+15 MCP tools via a dedicated **dead-mcp** server (https://dead-mcp.quickswoodcapital.com/mcp).
 
 See README.md for end-user-facing description. This file is for picking
 up development between sessions.
@@ -17,8 +17,7 @@ up development between sessions.
 ## Phase status
 
 - [x] **Phase 1** — date-keyed `shows` + `plex_albums` joined on date
-- [x] **Phase 2** — setlist/stats query engine + 11 MCP tools in
-      homelab-mcp/tools/deaddb.py
+- [x] **Phase 2** — setlist/stats query engine + 11 MCP tools
 - [x] **Phase 4** — archive.org gap-fill (built ahead of phase 3 because
       archive.org has a clean API; no regrets)
 - [x] **Phase 3** — RAG over Grateful Dead lore
@@ -27,7 +26,7 @@ up development between sessions.
   - [x] Light Into Ashes fetcher (`lore/fetchers/lia.py`, ~200 essays + primary sources)
   - [x] Books fetcher (`lore/fetchers/books.py`, EPUB library)
   - [x] Song-name matching (`lore/song_matcher.py`, `lore/match_songs.py`)
-  - [x] MCP tools: `dead_lore` + `dead_ask` in homelab-mcp/tools/deaddb.py
+  - [x] MCP tools: `dead_lore` + `dead_ask`
   - [x] Router (`lore/router.py`) — entity extraction + hybrid retrieval + followup suggestions
   - [x] HeadyVersion ingest (`build_headyversion.py`, `lore/fetchers/headyversion.py`)
         25,012 community votes in `dead.db.community_votes`; 93% resolved to song_uuid;
@@ -35,8 +34,11 @@ up development between sessions.
         MCP tools: `dead_top_versions` + `dead_show_votes`.
   - [x] Deadcast fetcher (`lore/fetchers/deadcast.py`, `lore/build_deadcast.py`)
         Local-HTML path — saved dead.net transcript pages on NAS. No network, no Whisper.
-        10 episodes ingested (8 WD50 + 2 BONUS), 320 chunks. Idempotent; grows by
+        38 episodes ingested, 2189 chunks. Idempotent; grows by
         dropping more saved pages into DEADCAST_DIR and re-running build_deadcast.
+- [x] **Phase 5** — dead-mcp extraction: all 15 tools moved to dedicated server
+      `dead_mcp/` in this repo, port 8768, https://dead-mcp.quickswoodcapital.com/mcp
+      homelab-mcp rebuilt without torch/ML deps (2 GB → 315 MB)
 
 ## Phase 3 locked design decisions (do not relitigate)
 
@@ -53,7 +55,7 @@ and ask before changing it.
 - **raw_text** is stored in the documents table — trades ~50-200 MB of
   disk for the ability to re-chunk without re-scraping.
 - **Code location:** dead-db/lore/ subdirectory in this repo. MCP tools
-  live in homelab-mcp/tools/deaddb.py alongside existing dead tools.
+  live in dead_mcp/tools.py (formerly homelab-mcp/tools/deaddb.py).
 - **Schema split:** plain DDL in schema.sql, vec0 virtual table created
   in db.py (requires sqlite-vec extension loaded first).
 - **Hard fail on model mismatch:** meta table records the embedding
@@ -67,17 +69,20 @@ and ask before changing it.
 
 ## MCP tool inventory (15 total)
 
-### Setlist/archive tools (homelab-mcp/tools/deaddb.py)
+Served by **dead-mcp** at https://dead-mcp.quickswoodcapital.com/mcp (port 8768, Docker on arrstack).
+All tools live in `dead_mcp/tools.py`.
+
+### Setlist/archive tools
 dead_stats, dead_setlist, dead_song_history, dead_shows, dead_plex_library,
 dead_show_recordings, dead_this_date, dead_song_stats, dead_segues,
 dead_run, dead_rare_songs
 
-### Lore tools (homelab-mcp/tools/deaddb.py)
+### Lore tools
 dead_lore — raw semantic search, optional source filter
 dead_ask  — entity-aware router: extracts dates/songs/era, hybrid retrieval,
             returns chunks + suggested SQL followup calls
 
-### Community votes tools (homelab-mcp/tools/deaddb.py)
+### Community votes tools
 dead_top_versions — top HeadyVersion-voted performances of a song; JOINs
                     shows + archive_recordings for venue/city/archive_id
 dead_show_votes   — all HV submissions for a date, sorted by vote score
@@ -94,6 +99,13 @@ dead-db/
   build_headyversion.py      # phase 3 addendum: HV scraper -> community_votes in dead.db
   requirements.txt
   unresolved_titles.log      # 119 Plex albums without a dateable title (expected)
+  dead_mcp/                  # phase 5: dedicated MCP server for all 15 dead tools
+    __init__.py
+    server.py                # FastMCP entry point, port 8768, OAuth 2.1
+    oauth_provider.py        # auto-approving OAuth provider
+    tools.py                 # all 15 dead tools (moved from homelab-mcp/tools/deaddb.py)
+    requirements.txt         # includes torch + sentence-transformers
+    Dockerfile               # python:3.12-slim, bind-mounted at /app in compose
   lore/                      # phase 3: RAG lore pipeline
     SPEC.md                  # scaffolding spec (locked, complete, historical)
     SPEC_wikipedia.md        # wikipedia fetcher spec (complete)
@@ -190,7 +202,7 @@ prevents drift; small phases drift hardest because they feel safe.
 
 ## What's next
 
-Phase 3 is complete. Project is feature-complete.
+Phases 1–5 complete. Project is feature-complete.
 
 Possible future work:
 - Add more Deadcast episodes as they're saved (see workflow above)
