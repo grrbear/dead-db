@@ -6,12 +6,23 @@ import sqlite3
 import sys
 from datetime import date as dt_date, timedelta
 from pathlib import Path
+from urllib.parse import quote
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from lore import query as lore_query          # noqa: E402
 from lore.router import ask as router_ask     # noqa: E402
 
 DB_PATH = Path(os.environ.get("DEAD_DB", "/data/nas/dead.db"))
+
+# Stable per-server constant — if the Plex server is ever migrated to new hardware
+# the machineIdentifier changes and this must be updated (see CLAUDE.md).
+PLEX_MACHINE_ID = "05620e07ccae33656488c8d56cc4a0863cddcb25"
+
+
+def _plexamp_link(guid: str, parent_guid: str, rating_key) -> str:
+    key = quote(f"/library/metadata/{rating_key}", safe="")
+    return (f"https://listen.plex.tv/album/{guid}"
+            f"?source={PLEX_MACHINE_ID}&key={key}&parentGuid={parent_guid}")
 
 
 def _connect():
@@ -720,18 +731,19 @@ def register(mcp):
             conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
             rows = conn.execute("""
                 SELECT cv.show_date,
-                       COALESCE(s.venue, cv.venue)   AS venue,
-                       COALESCE(s.city,  cv.city)    AS city,
-                       s.state, s.country,
-                       cv.vote_score, cv.blurb, cv.heady_url,
-                       ar.identifier                  AS archive_id,
-                       sng.name                       AS song_canonical
+                       COALESCE(s.venue, cv.venue) AS venue,
+                       COALESCE(s.city,  cv.city)  AS city, s.state, s.country,
+                       MAX(cv.vote_score) AS vote_score, cv.blurb, cv.heady_url,
+                       (SELECT ar.identifier FROM archive_recordings ar
+                        WHERE ar.show_date = cv.show_date
+                        ORDER BY (ar.num_reviews>=3) DESC, ar.avg_rating DESC, ar.downloads DESC
+                        LIMIT 1) AS archive_id
                 FROM community_votes cv
-                LEFT JOIN songs   sng ON sng.uuid = cv.song_uuid
-                LEFT JOIN shows   s   ON s.date   = cv.show_date
-                LEFT JOIN archive_recordings ar ON ar.show_date = cv.show_date
+                LEFT JOIN songs sng ON sng.uuid = cv.song_uuid
+                LEFT JOIN shows s   ON s.date   = cv.show_date
                 WHERE LOWER(sng.name) = LOWER(?) OR LOWER(cv.song_name) = LOWER(?)
-                ORDER BY cv.vote_score DESC, ar.avg_rating DESC NULLS LAST
+                GROUP BY cv.show_date
+                ORDER BY vote_score DESC
                 LIMIT ?
             """, (canonical, song_name, k_clamped)).fetchall()
             conn.close()
@@ -745,6 +757,119 @@ def register(mcp):
                     for r in rows
                 ],
             }
+        return await asyncio.to_thread(_run)
+
+    @mcp.tool()
+    async def dead_best_versions(query: str, k: int = 10) -> dict:
+        """Best community-voted versions of a song or segue, each with a HeadyVersion
+        link and a way to listen: a Plexamp deep link if the show is in your Plex
+        library, otherwise the best archive.org recording (Charlie Miller preferred).
+
+        Args:
+            query: a song ("Dark Star") or a segue ("Scarlet > Fire", also accepts
+                   ">", " into ", " -> ").
+            k: number of distinct shows to return (default 10, max 25).
+        """
+        def _run():
+            from lore.song_matcher import _gazetteer
+            table, _, _ = _gazetteer()
+            def canon(n): return table.get(n.strip().lower(), (n.strip(), False))[0]
+
+            seg = None
+            for sep in (" > ", " -> ", " into ", ">"):
+                if sep in query:
+                    a, b = query.split(sep, 1)
+                    seg = (canon(a), canon(b))
+                    break
+            song = seg[0] if seg else canon(query)
+            k_clamped = max(1, min(int(k), 25))
+
+            conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
+            conn.row_factory = sqlite3.Row
+
+            if seg:
+                rows = conn.execute("""
+                    WITH seg_dates AS (
+                        SELECT DISTINCT p1.show_date
+                        FROM performances p1
+                        JOIN performances p2
+                          ON p2.show_date=p1.show_date AND p2.set_num=p1.set_num
+                         AND p2.position=p1.position+1
+                        WHERE LOWER(p1.song_name)=LOWER(?) AND p1.segued_out=1
+                          AND LOWER(p2.song_name)=LOWER(?)
+                    )
+                    SELECT cv.show_date, MAX(cv.vote_score) AS vote_score,
+                           cv.heady_url, cv.blurb,
+                           COALESCE(s.venue,cv.venue) AS venue,
+                           COALESCE(s.city, cv.city)  AS city, s.state, s.country
+                    FROM community_votes cv
+                    JOIN seg_dates d ON d.show_date=cv.show_date
+                    LEFT JOIN songs sng ON sng.uuid=cv.song_uuid
+                    LEFT JOIN shows s   ON s.date=cv.show_date
+                    WHERE LOWER(sng.name)=LOWER(?) OR LOWER(cv.song_name)=LOWER(?)
+                    GROUP BY cv.show_date
+                    ORDER BY vote_score DESC LIMIT ?
+                """, (seg[0], seg[1], seg[0], seg[0], k_clamped)).fetchall()
+                label = f"{seg[0]} > {seg[1]}"
+            else:
+                rows = conn.execute("""
+                    SELECT cv.show_date, MAX(cv.vote_score) AS vote_score,
+                           cv.heady_url, cv.blurb,
+                           COALESCE(s.venue,cv.venue) AS venue,
+                           COALESCE(s.city, cv.city)  AS city, s.state, s.country
+                    FROM community_votes cv
+                    LEFT JOIN songs sng ON sng.uuid=cv.song_uuid
+                    LEFT JOIN shows s   ON s.date=cv.show_date
+                    WHERE LOWER(sng.name)=LOWER(?) OR LOWER(cv.song_name)=LOWER(?)
+                    GROUP BY cv.show_date
+                    ORDER BY vote_score DESC LIMIT ?
+                """, (song, song, k_clamped)).fetchall()
+                label = song
+
+            out = []
+            for r in rows:
+                d = r["show_date"]
+                pa = conn.execute("""
+                    SELECT rating_key, title, guid, parent_guid,
+                           (SELECT COUNT(*) FROM plex_albums
+                            WHERE show_date=? AND guid IS NOT NULL) AS copies
+                    FROM plex_albums
+                    WHERE show_date=? AND guid IS NOT NULL
+                    ORDER BY (title LIKE '%(%Matrix%)' OR title LIKE '%(%SBD%)'),
+                             length(title), rating_key
+                    LIMIT 1
+                """, (d, d)).fetchone()
+
+                if pa:
+                    listen = {"type": "plexamp",
+                              "url": _plexamp_link(pa["guid"], pa["parent_guid"], pa["rating_key"]),
+                              "plex_title": pa["title"], "rating_key": pa["rating_key"],
+                              "owned_copies": pa["copies"]}
+                else:
+                    ar = conn.execute("""
+                        SELECT identifier, archive_url, source_type, avg_rating, num_reviews
+                        FROM archive_recordings WHERE show_date=?
+                        ORDER BY (identifier LIKE '%miller%') DESC,
+                                 CASE source_type WHEN 'SBD' THEN 0 WHEN 'MATRIX' THEN 1
+                                                  WHEN 'FM' THEN 2 WHEN 'AUD' THEN 3 ELSE 4 END,
+                                 (num_reviews >= 3) DESC, avg_rating DESC, downloads DESC
+                        LIMIT 1
+                    """, (d,)).fetchone()
+                    if ar:
+                        listen = {"type": "archive", "url": ar["archive_url"],
+                                  "source_type": ar["source_type"],
+                                  "charlie_miller": "miller" in (ar["identifier"] or "").lower(),
+                                  "avg_rating": ar["avg_rating"]}
+                    else:
+                        listen = {"type": "none", "url": None}
+
+                out.append({"rank": len(out) + 1, "date": d,
+                            "venue": r["venue"], "city": r["city"],
+                            "state": r["state"], "country": r["country"],
+                            "vote_score": r["vote_score"], "heady_url": r["heady_url"],
+                            "listen": listen})
+            conn.close()
+            return {"query": label, "mode": "segue" if seg else "song", "versions": out}
         return await asyncio.to_thread(_run)
 
     @mcp.tool()

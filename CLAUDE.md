@@ -67,7 +67,7 @@ and ask before changing it.
 - **Hybrid retrieval:** entity filter (dates/songs/era) applied as hard
   WHERE when entities are extracted; pure vector fallback otherwise.
 
-## MCP tool inventory (15 total)
+## MCP tool inventory (16 total)
 
 Served by **dead-mcp** at https://dead-mcp.quickswoodcapital.com/mcp (port 8768, Docker on arrstack).
 All tools live in `dead_mcp/tools.py`.
@@ -82,10 +82,24 @@ dead_lore — raw semantic search, optional source filter
 dead_ask  — entity-aware router: extracts dates/songs/era, hybrid retrieval,
             returns chunks + suggested SQL followup calls
 
-### Community votes tools
-dead_top_versions — top HeadyVersion-voted performances of a song; JOINs
-                    shows + archive_recordings for venue/city/archive_id
-dead_show_votes   — all HV submissions for a date, sorted by vote score
+### Community votes + listen-link tools
+dead_best_versions — ranked distinct shows for a song or segue ("Scarlet > Fire"),
+                     each with a Plexamp deep link (if owned) or best archive.org
+                     recording (Charlie Miller preferred). Backed by plex_albums.guid.
+dead_top_versions  — raw HeadyVersion votes per show for a song; returns archive_id.
+                     Fan-out bug fixed (GROUP BY show_date, correlated archive subquery).
+dead_show_votes    — all HV submissions for a date, sorted by vote score
+
+### plex_albums schema note
+`plex_albums` now has `guid TEXT` and `parent_guid TEXT` columns (bare IDs, e.g.
+`5d07cc7f403c640290e8646b`), backfilled by running `plex.py`. These are used by
+`dead_best_versions` to build Plexamp links without any live Plex network call.
+`guid` is NULL for unmatched fan transfers (local:// items). Re-run `plex.py` after
+any `build_db.py` rebuild to restore these columns.
+
+`PLEX_MACHINE_ID` in `dead_mcp/tools.py` is the server's stable `machineIdentifier`.
+If the Plex server is ever migrated to new hardware, update this constant and re-run
+`plex.py` to refresh the guids.
 
 ## Repo layout (current)
 ```

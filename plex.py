@@ -58,6 +58,25 @@ def fetch_albums(section_id):
     return albums
 
 
+def fetch_guid(rk):
+    """Fetch the global guid + parentGuid for one album (only on the item endpoint).
+
+    Returns bare IDs (e.g. '5d07cc7f403c640290e8646b') stripped of the plex://type/
+    prefix, ready for Plexamp link construction. Returns (None, None) for unmatched
+    items whose guid is a local:// URI rather than a plex:// one.
+    """
+    root = _plex(f"/library/metadata/{rk}")
+    el = root.find(".//Directory")
+    if el is None:
+        return None, None
+    def _extract_id(uri):
+        if uri and uri.startswith("plex://"):
+            parts = uri.split("/")
+            return parts[-1] if len(parts) >= 3 else None
+        return None
+    return _extract_id(el.get("guid")), _extract_id(el.get("parentGuid"))
+
+
 def sync(db_path=DB_PATH):
     if not PLEX_TOKEN:
         sys.exit("PLEX_TOKEN not set")
@@ -65,24 +84,42 @@ def sync(db_path=DB_PATH):
     section_id = find_gd_section()
     albums = fetch_albums(section_id)
 
+    # Enrich with guid/parentGuid (needed for Plexamp deep links; not in the /all lister)
+    enriched = []
+    for i, (rk, title, yr, sd) in enumerate(albums, 1):
+        guid, pguid = fetch_guid(rk)
+        enriched.append((rk, title, yr, sd, guid, pguid))
+        if i % 50 == 0:
+            print(f"  fetched guids {i}/{len(albums)}...")
+    albums = enriched
+
     con = sqlite3.connect(db_path)
     cur = con.cursor()
     cur.executescript("""
         DROP TABLE IF EXISTS plex_albums;
         CREATE TABLE plex_albums (
-            rating_key INTEGER PRIMARY KEY,
-            title      TEXT NOT NULL,
-            year       INTEGER,
-            show_date  TEXT
+            rating_key  INTEGER PRIMARY KEY,
+            title       TEXT NOT NULL,
+            year        INTEGER,
+            show_date   TEXT,
+            guid        TEXT,
+            parent_guid TEXT
         );
         CREATE INDEX idx_pa_date ON plex_albums(show_date);
     """)
-    cur.executemany("INSERT INTO plex_albums VALUES(?,?,?,?)", albums)
+    cur.executemany("INSERT INTO plex_albums VALUES(?,?,?,?,?,?)", albums)
     con.commit()
 
     total    = len(albums)
     resolved = sum(1 for a in albums if a[3])
     nulls    = [a for a in albums if not a[3]]
+    with_guid = sum(1 for a in albums if a[4])
+    print(f"plex_albums: {total} albums, {resolved} dated, {len(nulls)} NULL, {with_guid} with guid")
+
+    if nulls:
+        print("\nNULL (no YYYY-MM-DD in title):")
+        for rk, title, yr, _, _g, _pg in nulls:
+            print(f"  [{rk}] {title}")
 
     # detect duplicate show_dates (multiple ratingKeys for same date)
     seen = {}
@@ -91,18 +128,11 @@ def sync(db_path=DB_PATH):
             seen.setdefault(a[3], []).append(a)
     dups = {d: v for d, v in seen.items() if len(v) > 1}
 
-    print(f"plex_albums: {total} albums, {resolved} dated, {len(nulls)} NULL")
-
-    if nulls:
-        print("\nNULL (no YYYY-MM-DD in title):")
-        for rk, title, yr, _ in nulls:
-            print(f"  [{rk}] {title}")
-
     if dups:
         print("\nDuplicate dates (multiple albums for same show):")
         for date, entries in sorted(dups.items()):
             print(f"  {date}:")
-            for rk, title, yr, _ in entries:
+            for rk, title, yr, _, _g, _pg in entries:
                 print(f"    [{rk}] {title}")
 
     con.close()
