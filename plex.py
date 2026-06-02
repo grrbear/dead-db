@@ -34,6 +34,14 @@ def _plex(path, **params):
     return ET.fromstring(r.text)
 
 
+def _extract_id(uri):
+    """Strip plex://type/ prefix, returning bare hex ID. None for local:// items."""
+    if uri and uri.startswith("plex://"):
+        parts = uri.split("/")
+        return parts[-1] if len(parts) >= 3 else None
+    return None
+
+
 def find_gd_section():
     if GD_SECTION:
         return GD_SECTION
@@ -69,12 +77,26 @@ def fetch_guid(rk):
     el = root.find(".//Directory")
     if el is None:
         return None, None
-    def _extract_id(uri):
-        if uri and uri.startswith("plex://"):
-            parts = uri.split("/")
-            return parts[-1] if len(parts) >= 3 else None
-        return None
     return _extract_id(el.get("guid")), _extract_id(el.get("parentGuid"))
+
+
+def fetch_tracks(album_rk, show_date):
+    """Fetch all tracks for an album via /children. guid is present on Track (Path A)."""
+    root = _plex(f"/library/metadata/{album_rk}/children")
+    rows = []
+    for t in root.findall(".//Track"):
+        trk = int(t.get("ratingKey"))
+        guid = _extract_id(t.get("guid"))
+        rows.append((
+            trk,
+            album_rk,
+            show_date,
+            int(t.get("parentIndex") or 1),
+            int(t.get("index") or 0),
+            t.get("title", ""),
+            guid,
+        ))
+    return rows
 
 
 def sync(db_path=DB_PATH):
@@ -106,6 +128,18 @@ def sync(db_path=DB_PATH):
             parent_guid TEXT
         );
         CREATE INDEX idx_pa_date ON plex_albums(show_date);
+        DROP TABLE IF EXISTS plex_tracks;
+        CREATE TABLE plex_tracks (
+            track_rating_key INTEGER PRIMARY KEY,
+            album_rating_key INTEGER,
+            show_date        TEXT,
+            disc             INTEGER,
+            position         INTEGER,
+            title            TEXT,
+            track_guid       TEXT
+        );
+        CREATE INDEX idx_pt_album ON plex_tracks(album_rating_key);
+        CREATE INDEX idx_pt_date  ON plex_tracks(show_date);
     """)
     cur.executemany("INSERT INTO plex_albums VALUES(?,?,?,?,?,?)", albums)
     con.commit()
@@ -135,8 +169,29 @@ def sync(db_path=DB_PATH):
             for rk, title, yr, _, _g, _pg in entries:
                 print(f"    [{rk}] {title}")
 
+    # Backfill plex_tracks for owned ∩ voted shows
+    try:
+        voted = {r[0] for r in cur.execute(
+            "SELECT DISTINCT show_date FROM community_votes WHERE show_date IS NOT NULL")}
+    except sqlite3.OperationalError:
+        voted = set()
+        print("community_votes not found — skipping plex_tracks backfill")
+
+    qualifying = [(rk, sd) for rk, title, yr, sd, guid, pguid in albums
+                  if sd and sd in voted]
+    print(f"\nBackfilling plex_tracks for {len(qualifying)} owned+voted albums...")
+    track_rows = []
+    for i, (rk, sd) in enumerate(qualifying, 1):
+        track_rows.extend(fetch_tracks(rk, sd))
+        if i % 25 == 0:
+            print(f"  fetched tracks {i}/{len(qualifying)}...")
+    cur.executemany("INSERT OR REPLACE INTO plex_tracks VALUES(?,?,?,?,?,?,?)", track_rows)
+    con.commit()
+    album_count = len({r[1] for r in track_rows})
+    print(f"plex_tracks: {len(track_rows)} tracks across {album_count} owned+voted albums")
+
     con.close()
-    print(f"\nWrote plex_albums → {db_path}")
+    print(f"\nWrote plex_albums + plex_tracks → {db_path}")
 
 
 if __name__ == "__main__":

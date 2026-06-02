@@ -101,6 +101,34 @@ any `build_db.py` rebuild to restore these columns.
 If the Plex server is ever migrated to new hardware, update this constant and re-run
 `plex.py` to refresh the guids.
 
+### plex_tracks schema note
+`plex_tracks` holds per-track guid + position data, backfilled by `plex.py` alongside
+`plex_albums`. Scope is **owned ∩ HeadyVersion-voted** shows only
+(`plex_albums.show_date ∩ community_votes.show_date`) — currently 389 albums / 8247
+tracks. Widen to all owned albums by removing the voted filter in `plex.py:sync()` if
+other tools need full track coverage.
+
+**Why track-level links are required:** box-set and combo-release albums (Pacific
+Northwest 73-74, Europe '72, Dick's Picks 28/29, etc.) share a single `plex://album/`
+guid across every member show. An album-level Plexamp link (`/album/<guid>`) collapses
+onto the box, not the individual show. Per-show uniqueness lives at the track level —
+each track has a distinct `plex://track/` guid. `dead_best_versions` links at the track
+level for all owned shows (not just box sets), landing on the queried song's actual
+performance. Falls back to the show's first track if no title match; falls back to
+archive.org (never an album link) if the album has no track rows in `plex_tracks`.
+
+Track link format:
+```
+https://listen.plex.tv/track/<TRACK_GUID>
+  ?source=<MACHINE_ID>
+  &key=%2Flibrary%2Fmetadata%2F<TRACK_RK>
+  &parentGuid=<ALBUM_GUID>
+  &grandparentGuid=<ARTIST_GUID>
+  &accountID=202609&username=BearsWorld
+```
+`PLEX_ACCOUNT_ID`/`PLEX_USERNAME` constants in `tools.py` match the validated links;
+they're optional for playback but included to byte-match the known-good URLs.
+
 ## Repo layout (current)
 ```
 dead-db/

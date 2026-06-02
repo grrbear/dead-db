@@ -16,13 +16,25 @@ DB_PATH = Path(os.environ.get("DEAD_DB", "/data/nas/dead.db"))
 
 # Stable per-server constant — if the Plex server is ever migrated to new hardware
 # the machineIdentifier changes and this must be updated (see CLAUDE.md).
-PLEX_MACHINE_ID = "05620e07ccae33656488c8d56cc4a0863cddcb25"
+PLEX_MACHINE_ID  = "05620e07ccae33656488c8d56cc4a0863cddcb25"
+PLEX_ACCOUNT_ID  = "202609"
+PLEX_USERNAME    = "BearsWorld"
 
 
 def _plexamp_link(guid: str, parent_guid: str, rating_key) -> str:
     key = quote(f"/library/metadata/{rating_key}", safe="")
     return (f"https://listen.plex.tv/album/{guid}"
             f"?source={PLEX_MACHINE_ID}&key={key}&parentGuid={parent_guid}")
+
+
+def _plexamp_track_link(track_guid: str, track_rk, album_guid: str, artist_guid: str) -> str:
+    key = quote(f"/library/metadata/{track_rk}", safe="")
+    url = (f"https://listen.plex.tv/track/{track_guid}"
+           f"?source={PLEX_MACHINE_ID}&key={key}"
+           f"&parentGuid={album_guid}&grandparentGuid={artist_guid}")
+    if PLEX_ACCOUNT_ID and PLEX_USERNAME:
+        url += f"&accountID={PLEX_ACCOUNT_ID}&username={PLEX_USERNAME}"
+    return url
 
 
 def _connect():
@@ -826,6 +838,8 @@ def register(mcp):
                 """, (song, song, k_clamped)).fetchall()
                 label = song
 
+            match_song = seg[0] if seg else song
+
             out = []
             for r in rows:
                 d = r["show_date"]
@@ -841,11 +855,30 @@ def register(mcp):
                 """, (d, d)).fetchone()
 
                 if pa:
-                    listen = {"type": "plexamp",
-                              "url": _plexamp_link(pa["guid"], pa["parent_guid"], pa["rating_key"]),
-                              "plex_title": pa["title"], "rating_key": pa["rating_key"],
-                              "owned_copies": pa["copies"]}
-                else:
+                    trk = conn.execute("""
+                        SELECT track_guid, track_rating_key, title
+                        FROM plex_tracks
+                        WHERE album_rating_key = ? AND track_guid IS NOT NULL
+                          AND LOWER(title) LIKE '%' || LOWER(?) || '%'
+                        ORDER BY disc, position LIMIT 1
+                    """, (pa["rating_key"], match_song)).fetchone()
+                    if not trk:
+                        trk = conn.execute("""
+                            SELECT track_guid, track_rating_key, title FROM plex_tracks
+                            WHERE album_rating_key = ? AND track_guid IS NOT NULL
+                            ORDER BY disc, position LIMIT 1
+                        """, (pa["rating_key"],)).fetchone()
+
+                    if trk:
+                        listen = {"type": "plexamp",
+                                  "url": _plexamp_track_link(trk["track_guid"], trk["track_rating_key"],
+                                                             pa["guid"], pa["parent_guid"]),
+                                  "plex_title": pa["title"], "track": trk["title"],
+                                  "rating_key": pa["rating_key"], "owned_copies": pa["copies"]}
+                    else:
+                        pa = None  # no track rows → fall through to archive; album links unsafe for box sets
+
+                if not pa:
                     ar = conn.execute("""
                         SELECT identifier, archive_url, source_type, avg_rating, num_reviews
                         FROM archive_recordings WHERE show_date=?
