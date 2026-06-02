@@ -1,5 +1,5 @@
 """
-Minimal auto-approving OAuth 2.1 provider for the homelab MCP server.
+Minimal auto-approving OAuth 2.1 provider for the dead MCP server.
 
 Flow:
 1. claude.ai discovers /.well-known/oauth-protected-resource  → metadata
@@ -9,8 +9,9 @@ Flow:
 5. claude.ai exchanges code for access token via POST /token
 6. All subsequent MCP requests use the bearer token
 
-Tokens are persisted to TOKEN_STORE_PATH (/data/tokens.json by default) so they
-survive container restarts — no need to re-authorize in claude.ai after a redeploy.
+Tokens are persisted to TOKEN_STORE_PATH (/dead-mcp-data/tokens.json by default,
+overridden via the TOKEN_STORE_PATH env var) so they survive container restarts —
+no need to re-authorize in claude.ai after a redeploy.
 """
 import json
 import os
