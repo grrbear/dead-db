@@ -146,6 +146,15 @@ PER_SOURCE_CAP = {
     "wikipedia": 2,
     "book": 4,
     "deadcast": 4,
+    "reddit": 4,        # top tier: may contribute up to 4 chunks per answer
+}
+
+# Multiplier on vector distance per source. <1 boosts (smaller effective
+# distance ranks higher); 1.0 is neutral. Reddit is weighted up so first-person
+# accounts surface — but only modestly; it is the noisiest source.
+SOURCE_WEIGHT_DEFAULT = 1.0
+SOURCE_WEIGHT = {
+    "reddit": 0.85,
 }
 
 
@@ -241,6 +250,7 @@ def retrieve(question: str, *, k: int = 8,
             document_metadata=json.loads(r[10]) if r[10] else None,
         ) for r in rows
     ]
+    chunks.sort(key=lambda c: c.distance * SOURCE_WEIGHT.get(c.source, SOURCE_WEIGHT_DEFAULT))
     return _apply_caps(chunks, k), ents
 
 
