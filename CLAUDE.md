@@ -36,6 +36,15 @@ up development between sessions.
         Local-HTML path — saved dead.net transcript pages on NAS. No network, no Whisper.
         88 episodes ingested, 4866 chunks. Idempotent; grows by
         dropping more saved pages into DEADCAST_DIR and re-running build_deadcast.
+  - [x] Reddit fetcher (`lore/fetchers/reddit.py`, `lore/build_reddit.py`)
+        Offline Arctic Shift dumps (.jsonl NDJSON) — no network, no auth.
+        r/gratefuldead posts + comments dump in `lore/data/reddit/`. Two-pass:
+        scan posts (score≥10 gate), attach qualifying comments (score≥5, len≥120),
+        emit one doc per post. Slash-date annotation ("5/8/77" → ISO inline) so
+        mentioned_dates populates for show-specific queries.
+        Router Option B: PER_SOURCE_CAP=4 + SOURCE_WEIGHT=0.85 boost.
+        Original live-API fetcher parked as `fetchers/reddit_api.py` (Reddit
+        unauthenticated .json now 403s — Cloudflare bot block + RBP gate).
 - [x] **Phase 5** — dead-mcp extraction: all 15 tools moved to dedicated server
       `dead_mcp/` in this repo, port 8768, https://dead-mcp.quickswoodcapital.com/mcp
       homelab-mcp rebuilt without torch/ML deps (2 GB → 315 MB)
@@ -62,8 +71,9 @@ and ask before changing it.
   model + dim; init_schema raises if config disagrees with what's in
   the DB. Mismatched vectors silently produce wrong retrieval.
 - **Source caps in router:** per-source chunk caps per query — lia_essays 3,
-  wikipedia 2, book 4, deadcast 4; unlisted sources default 3; plus a per-doc
-  cap of 2. Prevents any single corpus dominating results.
+  wikipedia 2, book 4, deadcast 4, reddit 4; unlisted sources default 3; plus
+  a per-doc cap of 2. Reddit also gets a SOURCE_WEIGHT=0.85 distance multiplier
+  (boost) so first-person fan accounts surface above their raw vector rank.
 - **Hybrid retrieval:** entity filter (dates/songs/era) applied as hard
   WHERE when entities are extracted; pure vector fallback otherwise.
 
@@ -158,8 +168,11 @@ dead-db/
     SPEC_headyversion.md       # HeadyVersion ingest spec (complete)
     SPEC_deadcast.md           # Deadcast fetcher spec (complete)
     SPEC_deadcast_DEFERRED.md  # old deferred spec (superseded, historical)
+    SPEC_reddit.md             # Reddit corpus spec (Arctic Shift dump approach)
+    SPEC_reddit_api.md         # parked live-API spec (Reddit now 403s unauth)
     build_headyversion_lore.py # lore-path build for HV blurbs -> dead_lore.db
     build_deadcast.py          # Deadcast corpus build -> dead_lore.db
+    build_reddit.py            # Reddit corpus build -> dead_lore.db
     headyversion_alias_proposals.txt  # HV->canonical alias proposals (human-reviewed)
     config.py
     schema.sql
@@ -175,6 +188,10 @@ dead-db/
     articles.txt             # curated Wikipedia article list
     song_aliases.txt         # song name aliases for fuzzy matching
     song_stopwords.txt       # stopwords for song matching
+    data/
+      reddit/                # Arctic Shift dumps (not committed — large files)
+        r_gratefuldead_posts.jsonl
+        r_gratefuldead_comments.jsonl
     fetchers/
       _base.py
       _html.py
@@ -183,6 +200,8 @@ dead-db/
       books.py
       headyversion.py          # HV scraper (used by both build paths)
       deadcast.py              # Deadcast local-HTML fetcher
+      reddit.py                # Arctic Shift offline dump fetcher
+      reddit_api.py            # parked: live unauthenticated .json (now blocked)
 ```
 
 ### community_votes table (dead.db)
@@ -242,11 +261,26 @@ The pattern that's working:
 Resist the urge to skip step 2 for "small" phases. The spec is what
 prevents drift; small phases drift hardest because they feel safe.
 
+## Building / refreshing the Reddit corpus
+
+Dumps live in `lore/data/reddit/` (not committed — too large). Download from
+`arctic-shift.photon-reddit.com/download-tool`, select r/gratefuldead, grab
+both posts and comments dumps. Drop them in the directory and run:
+
+```bash
+cd /home/bear/dead-db
+python3 -m lore.build_reddit
+```
+
+Ingest is idempotent on permalink — safe to re-run after a fresh dump download.
+The build streams the full comments file (~4.7 GB) so it takes a few minutes.
+
 ## What's next
 
-Phases 1–5 complete. Project is feature-complete.
+Phases 1–5 complete + Reddit corpus (#6) added. Project is feature-complete.
 
 Possible future work:
+- Refresh Reddit dumps: re-download from Arctic Shift and re-run `build_reddit`
 - Add more Deadcast episodes as they're saved (see workflow above)
 - Refresh HeadyVersion votes: `python3 -m build_headyversion` (~25 min)
 - Tune chunk size or swap embedding model if retrieval quality degrades
