@@ -1,7 +1,7 @@
 # dead-db — Reddit fetcher (corpus #6, Arctic Shift dumps)
 
 Source: r/gratefuldead, ingested from Arctic Shift per-subreddit dumps
-(.zst NDJSON), read OFFLINE. No network, no auth, no Reddit API — the API
+(.jsonl NDJSON), read OFFLINE. No network, no auth, no Reddit API — the API
 is approval-gated (RBP) and unauth .json now 403s. Dumps are Arctic Shift's
 sanctioned path for whole-subreddit data and give complete history.
 

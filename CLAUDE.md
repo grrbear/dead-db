@@ -9,7 +9,7 @@ and which design decisions are locked (so they're not relitigated).
 A normalized SQLite database of Grateful Dead setlists, joined to my Plex
 music library and archive.org recordings, with structured questions
 answered by SQL and lore/insight questions answered by RAG. Exposed as
-15 MCP tools via a dedicated **dead-mcp** server (https://dead-mcp.quickswoodcapital.com/mcp).
+16 MCP tools via a dedicated **dead-mcp** server (https://dead-mcp.quickswoodcapital.com/mcp).
 
 See README.md for end-user-facing description. This file is for picking
 up development between sessions.
@@ -45,7 +45,7 @@ up development between sessions.
         Router Option B: PER_SOURCE_CAP=4 + SOURCE_WEIGHT=0.85 boost.
         Original live-API fetcher parked as `fetchers/reddit_api.py` (Reddit
         unauthenticated .json now 403s — Cloudflare bot block + RBP gate).
-- [x] **Phase 5** — dead-mcp extraction: all 15 tools moved to dedicated server
+- [x] **Phase 5** — dead-mcp extraction: all 16 tools moved to dedicated server
       `dead_mcp/` in this repo, port 8768, https://dead-mcp.quickswoodcapital.com/mcp
       homelab-mcp rebuilt without torch/ML deps (2 GB → 315 MB)
 
@@ -151,11 +151,11 @@ dead-db/
   build_headyversion.py      # phase 3 addendum: HV scraper -> community_votes in dead.db
   requirements.txt
   unresolved_titles.log      # 119 Plex albums without a dateable title (expected)
-  dead_mcp/                  # phase 5: dedicated MCP server for all 15 dead tools
+  dead_mcp/                  # phase 5: dedicated MCP server for all 16 dead tools
     __init__.py
     server.py                # FastMCP entry point, port 8768, OAuth 2.1
     oauth_provider.py        # auto-approving OAuth provider
-    tools.py                 # all 15 dead tools (moved from homelab-mcp/tools/deaddb.py)
+    tools.py                 # all 16 dead tools (moved from homelab-mcp/tools/deaddb.py)
     requirements.txt         # includes torch + sentence-transformers
     Dockerfile               # python:3.12-slim, bind-mounted at /app in compose
   lore/                      # phase 3: RAG lore pipeline
@@ -170,6 +170,10 @@ dead-db/
     SPEC_deadcast_DEFERRED.md  # old deferred spec (superseded, historical)
     SPEC_reddit.md             # Reddit corpus spec (Arctic Shift dump approach)
     SPEC_reddit_api.md         # parked live-API spec (Reddit now 403s unauth)
+    build_lore_db.py           # orchestrator: idempotent ingest at source_id grain
+    build_wikipedia.py         # Wikipedia corpus build -> dead_lore.db
+    build_lia.py               # Light Into Ashes corpus build -> dead_lore.db
+    build_books.py             # EPUB books corpus build -> dead_lore.db
     build_headyversion_lore.py # lore-path build for HV blurbs -> dead_lore.db
     build_deadcast.py          # Deadcast corpus build -> dead_lore.db
     build_reddit.py            # Reddit corpus build -> dead_lore.db
@@ -179,7 +183,6 @@ dead-db/
     db.py
     embed.py
     normalize.py
-    build_lore_db.py
     query.py
     router.py
     song_matcher.py
@@ -193,6 +196,7 @@ dead-db/
         r_gratefuldead_posts.jsonl
         r_gratefuldead_comments.jsonl
     fetchers/
+      __init__.py
       _base.py
       _html.py
       lia.py
@@ -284,4 +288,11 @@ Possible future work:
 - Add more Deadcast episodes as they're saved (see workflow above)
 - Refresh HeadyVersion votes: `python3 -m build_headyversion` (~25 min)
 - Tune chunk size or swap embedding model if retrieval quality degrades
+- Reddit corpus skews recent: the score gates (post>=10, comment>=5) filter out
+  most pre-~2015 content because the subreddit was tiny then and good posts
+  scored low. If older-era (70s/80s) coverage feels thin, swap the absolute
+  score floor in `fetchers/reddit.py` for a relative threshold (e.g.
+  `upvote_ratio`, present in the dumps, or a per-year percentile). Also note the
+  newest ~36h of any fresh dump score 0-1 (Arctic Shift "archived too fresh")
+  and are dropped by the gate — trivial slice, expected.
 - Add more books to the EPUB library and re-run `lore/build_lore_db.py`

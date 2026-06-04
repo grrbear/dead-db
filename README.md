@@ -7,7 +7,7 @@ A normalized SQLite database of Grateful Dead setlists, joined to your Plex musi
 - Loads all 2,358 Grateful Dead shows and 39,774 song performances from [gdshowsdb](https://github.com/jefmsmit/gdshowsdb) YAML into a relational SQLite DB
 - Pulls all albums from your Plex "Grateful Dead" library section, extracts show dates from album titles, and writes a `plex_albums` join table
 - Scrapes 18,224 recordings from the [archive.org GratefulDead collection](https://archive.org/details/GratefulDead) and writes an `archive_recordings` table with source classification and rankings
-- Exposes 13 MCP tools via [homelab-mcp](https://github.com/grrbear/homelab) (`homelab-mcp/tools/deaddb.py`) so you can ask Claude questions like "what did they play at Cornell 77", "every time they played Scarlet > Fire", or "how can I hear the Veneta 72 show"
+- Exposes 16 MCP tools via a dedicated [dead-mcp](https://dead-mcp.quickswoodcapital.com/mcp) server (`dead_mcp/tools.py`) so you can ask Claude questions like "what did they play at Cornell 77", "every time they played Scarlet > Fire", or "how can I hear the Veneta 72 show"
 
 ## Schema
 
@@ -15,9 +15,14 @@ A normalized SQLite database of Grateful Dead setlists, joined to your Plex musi
 songs              (uuid PK, name)
 shows              (date PK, uuid, venue, city, state, country)
 performances       (id PK, show_date FK, set_num, position, song_uuid FK, song_name, segued_out)
-plex_albums        (rating_key PK, title, year, show_date)          -- added by plex.py
+plex_albums        (rating_key PK, title, year, show_date,          -- added by plex.py
+                    guid TEXT, parent_guid TEXT)
+plex_tracks        (track_rating_key PK, album_rating_key, show_date,  -- added by plex.py
+                    disc, position, title, track_guid)
 archive_recordings (identifier PK, show_date, source_type, venue,   -- added by build_archive.py
                     coverage, avg_rating, num_reviews, downloads, archive_url)
+community_votes    (submission_id PK, heady_song_id, song_uuid,     -- added by build_headyversion.py
+                    song_name, show_date, vote_score, blurb, heady_url, fetched_at)
 ```
 
 `plex_albums.show_date` and `archive_recordings.show_date` both join to `shows.date`.
@@ -96,7 +101,7 @@ Validation floors (all scripts fail loudly if breached):
 
 ## MCP Tools
 
-Thirteen tools exposed via homelab-mcp (`https://mcp.quickswoodcapital.com/mcp`):
+Sixteen tools exposed via dead-mcp (`https://dead-mcp.quickswoodcapital.com/mcp`):
 
 ### Setlist & archive tools (11)
 
@@ -118,8 +123,16 @@ Thirteen tools exposed via homelab-mcp (`https://mcp.quickswoodcapital.com/mcp`)
 
 | Tool | Description |
 |---|---|
-| `dead_lore(query, k, source)` | Semantic search over the lore corpus. Returns top-k prose chunks ranked by relevance. Optional `source` filter: `wikipedia`, `lia_essays`, `lia_sources`, `book`. |
+| `dead_lore(query, k, source)` | Semantic search over the lore corpus. Returns top-k prose chunks ranked by relevance. Optional `source` filter: `wikipedia`, `lia_essays`, `lia_sources`, `book`, `deadcast`, `reddit`. |
 | `dead_ask(question, k)` | Lore router for narrative questions. Extracts entities (dates, songs, eras), runs hybrid retrieval, returns evidence chunks + suggested SQL followup calls. |
+
+### Community votes & Plexamp tools (3) — phase 3 addendum
+
+| Tool | Description |
+|---|---|
+| `dead_best_versions(song, limit)` | Ranked distinct shows for a song or segue ("Scarlet > Fire"), each with a Plexamp deep link (owned shows) or best archive.org recording |
+| `dead_top_versions(song, limit)` | Raw HeadyVersion vote totals per show for a song |
+| `dead_show_votes(date)` | All HeadyVersion submissions for a date, sorted by vote score |
 
 `dead_show_recordings` ranking: recordings with ≥3 reviews sorted by rating, tie-broken by source quality (SBD/MATRIX > FM > AUD) then downloads.
 
@@ -156,7 +169,7 @@ LIMIT 5;
 
 ## Lore corpus
 
-Phase 3 adds a second SQLite database (`/hddpool/datastore/dead_lore.db`) with semantic search over four corpora:
+Phase 3 adds a second SQLite database (`/hddpool/datastore/dead_lore.db`) with semantic search over six corpora:
 
 | Source | Content | Builder |
 |---|---|---|
@@ -164,6 +177,8 @@ Phase 3 adds a second SQLite database (`/hddpool/datastore/dead_lore.db`) with s
 | `lia_sources` | Primary source clippings linked from LIA essays | `lore/fetchers/lia.py` |
 | `wikipedia` | ~110 curated Wikipedia articles (albums, members, key shows, songs) | `lore/fetchers/wikipedia.py` |
 | `book` | Grateful Dead books from the local EPUB library | `lore/fetchers/books.py` |
+| `deadcast` | Transcripts of The Good Ol' Grateful Deadcast (local-HTML, NAS) | `lore/fetchers/deadcast.py` |
+| `reddit` | r/gratefuldead posts+comments from Arctic Shift offline dumps (~30k docs) | `lore/fetchers/reddit.py` |
 
 Embeddings: `BAAI/bge-small-en-v1.5` (384 dim, CPU). Vector search via `sqlite-vec`.
 
@@ -178,34 +193,54 @@ python3 -m lore.build_lore_db
 
 ```
 dead-db/
-  build_db.py          # loads gdshowsdb YAML → songs/shows/performances
-  plex.py              # pulls Plex GD library → plex_albums
-  scrape_archive.py    # cursor scrape of archive.org GratefulDead → archive_raw.jsonl
-  build_archive.py     # archive_raw.jsonl → archive_recordings table in dead.db
+  build_db.py            # loads gdshowsdb YAML → songs/shows/performances
+  plex.py                # pulls Plex GD library → plex_albums + plex_tracks
+  scrape_archive.py      # cursor scrape of archive.org GratefulDead → archive_raw.jsonl
+  build_archive.py       # archive_raw.jsonl → archive_recordings table in dead.db
+  build_headyversion.py  # HeadyVersion scraper → community_votes in dead.db
   requirements.txt
   unresolved_titles.log  # the 119 Plex albums without a dateable title (expected)
-  gddata/              # gitignored — clone of jefmsmit/gdshowsdb
-  data/                # gitignored — local DEAD_DB override output
-  archive_raw.jsonl    # gitignored — scrape output (~18k lines)
-  lore/                # phase 3 — RAG over Grateful Dead lore
-    config.py          # embedding model, DB path, chunk size
-    schema.sql         # documents, chunks, meta tables
-    db.py              # connect() + init_schema() with sqlite-vec
-    embed.py           # bge-small wrapper, lazy-loaded
-    normalize.py       # RawDocument → Chunk (paragraph merge, ~512 tokens)
-    build_lore_db.py   # orchestrator (idempotent at source_id grain)
-    query.py           # search(query, k) → ChunkResult
-    router.py          # entity extraction + hybrid retrieval + followup suggestions
-    song_matcher.py    # fuzzy song-name matching against dead.db.songs
-    match_songs.py     # CLI: populate chunks.mentioned_songs from dead.db
-    smoke_test.py      # 16/16 passing
-    articles.txt       # curated Wikipedia article list (~110 titles)
+  gddata/                # gitignored — clone of jefmsmit/gdshowsdb
+  archive_raw.jsonl      # gitignored — scrape output (~18k lines)
+  dead_mcp/              # phase 5 — dedicated MCP server (port 8768)
+    server.py            # FastMCP entry point, OAuth 2.1
+    tools.py             # all 16 MCP tools
+    oauth_provider.py    # auto-approving OAuth provider
+    requirements.txt
+    Dockerfile
+  lore/                  # phase 3 — RAG over Grateful Dead lore
+    config.py            # embedding model, DB path, chunk size
+    schema.sql           # documents, chunks, meta tables
+    db.py                # connect() + init_schema() with sqlite-vec
+    embed.py             # bge-small wrapper, lazy-loaded
+    normalize.py         # RawDocument → Chunk (paragraph merge, ~512 tokens)
+    build_lore_db.py     # orchestrator (idempotent at source_id grain)
+    build_wikipedia.py   # Wikipedia corpus build
+    build_lia.py         # Light Into Ashes corpus build
+    build_books.py       # EPUB books corpus build
+    build_headyversion_lore.py  # HeadyVersion blurbs → lore corpus
+    build_deadcast.py    # Deadcast transcripts corpus build
+    build_reddit.py      # Reddit Arctic Shift dumps corpus build
+    query.py             # search(query, k) → ChunkResult
+    router.py            # entity extraction + hybrid retrieval + followup suggestions
+    song_matcher.py      # fuzzy song-name matching against dead.db.songs
+    match_songs.py       # CLI: populate chunks.mentioned_songs from dead.db
+    smoke_test.py        # 16/16 passing
+    articles.txt         # curated Wikipedia article list (~110 titles)
+    song_aliases.txt     # song name aliases for fuzzy matching
+    song_stopwords.txt   # stopwords for song matching
+    data/
+      reddit/            # gitignored — Arctic Shift .jsonl dumps
     fetchers/
-      _base.py         # Fetcher ABC, RawDocument dataclass
-      lia.py           # Light Into Ashes scraper
-      wikipedia.py     # Wikipedia API fetcher
-      books.py         # EPUB library fetcher
-      _html.py         # shared HTML cleaning utilities
+      _base.py           # Fetcher ABC, RawDocument dataclass
+      _html.py           # shared HTML cleaning utilities
+      lia.py             # Light Into Ashes scraper
+      wikipedia.py       # Wikipedia API fetcher
+      books.py           # EPUB library fetcher
+      headyversion.py    # HeadyVersion scraper
+      deadcast.py        # Deadcast local-HTML fetcher
+      reddit.py          # Arctic Shift offline dump fetcher
+      reddit_api.py      # parked: live unauthenticated .json (now 403s)
 ```
 
 ## Data sources
