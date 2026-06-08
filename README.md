@@ -7,6 +7,7 @@ A normalized SQLite database of Grateful Dead setlists, joined to your Plex musi
 - Loads all 2,358 Grateful Dead shows and 39,774 song performances from [gdshowsdb](https://github.com/jefmsmit/gdshowsdb) YAML into a relational SQLite DB
 - Pulls all albums from your Plex "Grateful Dead" library section, extracts show dates from album titles, and writes a `plex_albums` join table
 - Scrapes 18,224 recordings from the [archive.org GratefulDead collection](https://archive.org/details/GratefulDead) and writes an `archive_recordings` table with source classification and rankings
+- Scrapes the [Play Dead catalog page](https://help.nugs.net/support/solutions/articles/6000284124-what-shows-albums-are-available-on-play-dead-) and writes `playdead_shows` (442 vault dates) and `playdead_albums` (164 official releases) tables
 - Exposes 16 MCP tools via a dedicated [dead-mcp](https://dead-mcp.quickswoodcapital.com/mcp) server (`dead_mcp/tools.py`) so you can ask Claude questions like "what did they play at Cornell 77", "every time they played Scarlet > Fire", or "how can I hear the Veneta 72 show"
 
 ## Schema
@@ -23,9 +24,14 @@ archive_recordings (identifier PK, show_date, source_type, venue,   -- added by 
                     coverage, avg_rating, num_reviews, downloads, archive_url)
 community_votes    (submission_id PK, heady_song_id, song_uuid,     -- added by build_headyversion.py
                     song_name, show_date, vote_score, blurb, heady_url, fetched_at)
+playdead_shows     (show_date PK, venue, city, state,              -- added by build_playdead.py
+                    release_id, web_url, fetched_at)
+playdead_albums    (title PK, raw_dates, release_id, web_url,      -- added by build_playdead.py
+                    fetched_at)
+playdead_album_shows (title, show_date PK)                         -- added by build_playdead.py
 ```
 
-`plex_albums.show_date` and `archive_recordings.show_date` both join to `shows.date`.
+`plex_albums.show_date`, `archive_recordings.show_date`, and `playdead_shows.show_date` all join to `shows.date`.
 
 ### Critical: show date extraction
 
@@ -58,6 +64,9 @@ python3 scrape_archive.py
 
 # 7. Build archive_recordings table
 python3 build_archive.py
+
+# 8. Build Play Dead availability tables (fetches nugs help-desk page)
+DEAD_DB=/hddpool/datastore/dead.db python3 build_playdead.py
 ```
 
 `build_db.py` and `plex.py` respect `DB_PATH` (default `/hddpool/datastore/dead.db`).
@@ -71,6 +80,10 @@ python3 build_archive.py
 | `GD_SECTION` | plex.py | *(auto-detected)* | Plex library section ID |
 | `DEAD_DB` | build_archive.py | `data/dead.db` | SQLite output path |
 | `ARCHIVE_RAW` | build_archive.py | `archive_raw.jsonl` | Scrape output from scrape_archive.py |
+| `DEAD_DB` | build_playdead.py | `data/dead.db` | SQLite output path |
+| `PLAYDEAD_URL` | build_playdead.py | *(nugs help-desk URL)* | Override catalog page URL |
+| `PLAYDEAD_RAW` | build_playdead.py | `playdead_raw.html` | Cached HTML path |
+| `PLAYDEAD_NO_FETCH` | build_playdead.py | *(unset)* | Set to re-parse cached HTML without re-fetching |
 
 ## Rebuild
 
@@ -81,11 +94,13 @@ python3 build_db.py                                        # songs/shows/perform
 PLEX_TOKEN=xxx python3 plex.py                             # plex_albums
 python3 scrape_archive.py                                  # archive_raw.jsonl (~10 min)
 DEAD_DB=/hddpool/datastore/dead.db python3 build_archive.py  # archive_recordings
+DEAD_DB=/hddpool/datastore/dead.db python3 build_playdead.py # playdead_shows/albums
 ```
 
 Validation floors (all scripts fail loudly if breached):
 - `build_db.py`: ≥ 2358 shows, ≥ 39774 performances, ≥ 526 songs
 - `build_archive.py`: ≥ 18000 recordings, ≥ 2000 distinct show dates
+- `build_playdead.py`: ≥ 350 shows, ≥ 120 albums
 
 ### Archive source classification
 
@@ -198,10 +213,14 @@ dead-db/
   scrape_archive.py      # cursor scrape of archive.org GratefulDead → archive_raw.jsonl
   build_archive.py       # archive_raw.jsonl → archive_recordings table in dead.db
   build_headyversion.py  # HeadyVersion scraper → community_votes in dead.db
+  build_playdead.py      # Play Dead catalog page → playdead_shows/albums tables
+  SPEC_playdead.md       # Phase A spec (complete; Phase B links spec not yet written)
   requirements.txt
   unresolved_titles.log  # the 119 Plex albums without a dateable title (expected)
+  playdead_unresolved.log # 5 shows not in gdshowsdb (all legit two-show days)
   gddata/                # gitignored — clone of jefmsmit/gdshowsdb
   archive_raw.jsonl      # gitignored — scrape output (~18k lines)
+  playdead_raw.html      # gitignored — cached help-desk page
   dead_mcp/              # phase 5 — dedicated MCP server (port 8768)
     server.py            # FastMCP entry point, OAuth 2.1
     tools.py             # all 16 MCP tools

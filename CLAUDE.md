@@ -48,6 +48,13 @@ up development between sessions.
 - [x] **Phase 5** — dead-mcp extraction: all 16 tools moved to dedicated server
       `dead_mcp/` in this repo, port 8768, https://dead-mcp.quickswoodcapital.com/mcp
       homelab-mcp rebuilt without torch/ML deps (2 GB → 315 MB)
+- [x] **Phase A** — Play Dead availability tables (`build_playdead.py`)
+      Scrapes the nugs help-desk catalog page and populates three tables in
+      `dead.db`: `playdead_shows` (442 date-keyed rows, 1966-07-03..1995-07-09),
+      `playdead_albums` (164 official releases), `playdead_album_shows` junction
+      (110 rows). Idempotent DROP+rebuild. `release_id`/`web_url` NULL until Phase B.
+      5 NO_SHOW_MATCH in log — all legit two-show days (gdshowsdb uses YYYY-MM-DD-N
+      suffixes for same-day double-headers; Play Dead lists the date once).
 
 ## Phase 3 locked design decisions (do not relitigate)
 
@@ -149,8 +156,11 @@ dead-db/
   scrape_archive.py          # phase 4: archive.org cursor scrape
   build_archive.py           # phase 4: scrape -> archive_recordings
   build_headyversion.py      # phase 3 addendum: HV scraper -> community_votes in dead.db
+  build_playdead.py          # phase A: nugs help-desk page -> playdead_shows/albums tables
+  SPEC_playdead.md           # phase A spec (complete)
   requirements.txt
   unresolved_titles.log      # 119 Plex albums without a dateable title (expected)
+  playdead_unresolved.log    # 5 shows not in gdshowsdb (all legit two-show days)
   dead_mcp/                  # phase 5: dedicated MCP server for all 16 dead tools
     __init__.py
     server.py                # FastMCP entry point, port 8768, OAuth 2.1
@@ -281,9 +291,16 @@ The build streams the full comments file (~4.7 GB) so it takes a few minutes.
 
 ## What's next
 
-Phases 1–5 complete + Reddit corpus (#6) added. Project is feature-complete.
+Phases 1–5 + Phase A complete. Active next work:
 
-Possible future work:
+- **Phase B** (`SPEC_playdead_links.md`, not yet written) — populate
+  `playdead_shows.release_id` / `web_url` with `vault.playdead.app/release/<id>`
+  deep links. Probe order: (1) try sitemap/public listing unauthenticated; (2) fall
+  back to authenticated nugs catalog API. Then wire `dead_show_recordings` to show
+  a "streaming on Play Dead" line. See SPEC_playdead.md §Phase B for details.
+
+Maintenance / possible future work:
+- Refresh Play Dead catalog: re-run `build_playdead.py` (page updated ~2 shows/Tuesday)
 - Refresh Reddit dumps: re-download from Arctic Shift and re-run `build_reddit`
 - Add more Deadcast episodes as they're saved (see workflow above)
 - Refresh HeadyVersion votes: `python3 -m build_headyversion` (~25 min)
