@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
-DEAD_DB_PATH = os.environ.get("DEAD_DB_PATH", "/hddpool/datastore/dead.db")
+DEAD_DB_PATH = os.environ.get("DEAD_DB_PATH", "/hddpool/datastore/databases/dead.db")
 ALIASES_FILE = Path(__file__).parent / "song_aliases.txt"
 STOPWORDS_FILE = Path(__file__).parent / "song_stopwords.txt"
 

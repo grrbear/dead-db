@@ -7,7 +7,7 @@ import os
 
 EMBEDDING_MODEL = os.environ.get("LORE_EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
 EMBEDDING_DIM = int(os.environ.get("LORE_EMBEDDING_DIM", "384"))
-LORE_DB_PATH = os.environ.get("LORE_DB_PATH", "/hddpool/datastore/dead_lore.db")
+LORE_DB_PATH = os.environ.get("LORE_DB_PATH", "/hddpool/datastore/databases/dead_lore.db")
 
 # chunking — tokens, approximate (we count chars/4 as cheap proxy)
 CHUNK_SIZE = int(os.environ.get("LORE_CHUNK_SIZE", "512"))

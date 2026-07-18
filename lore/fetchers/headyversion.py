@@ -336,7 +336,7 @@ class HeadyVersionFetcher(Fetcher):
         from collections import defaultdict
 
         # one-shot venue/city lookup from dead.db; avoids HTTP for show metadata
-        dead_db = os.environ.get("DEAD_DB_PATH", "/hddpool/datastore/dead.db")
+        dead_db = os.environ.get("DEAD_DB_PATH", "/hddpool/datastore/databases/dead.db")
         show_meta: dict[str, tuple[str | None, str | None]] = {}
         with sqlite3.connect(f"file:{dead_db}?mode=ro", uri=True) as cx:
             for d, v, c in cx.execute("SELECT date, venue, city FROM shows"):
