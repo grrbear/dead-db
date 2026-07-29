@@ -989,6 +989,114 @@ def register(mcp):
             return router_ask(question, k=k_clamped)
         return await asyncio.to_thread(_run)
 
+    @mcp.tool()
+    async def dead_songs_list(query: str = "", limit: int = 100) -> str:
+        """List or search all 526 canonical Grateful Dead song names in the database.
+        query: optional substring filter. Useful before calling dead_song_stats or
+        dead_song_history to confirm exact spelling of a song name."""
+        def _run():
+            if query:
+                rows = _q(
+                    "SELECT name FROM songs WHERE name LIKE ? ORDER BY name",
+                    (f"%{query}%",),
+                )
+            else:
+                rows = _q("SELECT name FROM songs ORDER BY name")
+            if not rows:
+                return f"No songs matching '{query}'." if query else "No songs found."
+            names = [r["name"] for r in rows[:limit]]
+            header = f"{len(rows)} songs" + (f" matching '{query}'" if query else " in database")
+            if len(rows) > limit:
+                header += f" (showing first {limit})"
+            return header + ":\n" + "\n".join(f"  {n}" for n in names)
+
+        return await asyncio.to_thread(_run)
+
+    @mcp.tool()
+    async def dead_official_releases(show_date: str = "", year: int = 0) -> str:
+        """Check which shows have official Play Dead / nugs.net releases.
+        show_date: ISO date (YYYY-MM-DD) to check a specific show.
+        year: filter to shows with official releases from a given year.
+        No args: list all 442 officially released show dates."""
+        def _run():
+            if show_date:
+                rows = _q(
+                    "SELECT ps.show_date, ps.venue, ps.city, ps.state "
+                    "FROM playdead_shows ps WHERE ps.show_date = ?",
+                    (show_date,),
+                )
+                if not rows:
+                    return f"{show_date}: no official Play Dead release found."
+                r = rows[0]
+                loc = ", ".join(x for x in [r["venue"], r["city"], r["state"]] if x)
+                return f"{show_date} — {loc}\nOfficial Play Dead release: YES"
+            elif year:
+                rows = _q(
+                    "SELECT ps.show_date, ps.venue, ps.city, ps.state "
+                    "FROM playdead_shows ps WHERE ps.show_date LIKE ? ORDER BY ps.show_date",
+                    (f"{year}-%",),
+                )
+            else:
+                rows = _q(
+                    "SELECT ps.show_date, ps.venue, ps.city, ps.state "
+                    "FROM playdead_shows ps ORDER BY ps.show_date"
+                )
+            if not rows:
+                return f"No official releases found{' for ' + str(year) if year else ''}."
+            scope = f" in {year}" if year else ""
+            lines = [f"{len(rows)} officially released shows{scope}:"]
+            for r in rows:
+                loc = ", ".join(x for x in [r["city"], r["state"]] if x)
+                lines.append(f"  {r['show_date']}  {r['venue'] or ''}  {loc}")
+            return "\n".join(lines)
+
+        return await asyncio.to_thread(_run)
+
+    @mcp.tool()
+    async def dead_recordings_search(
+        source_type: str = "",
+        min_rating: float = 0.0,
+        year: int = 0,
+        limit: int = 30,
+    ) -> str:
+        """Search archive.org Grateful Dead recordings by source type, rating, or year.
+        source_type: SBD | MATRIX | FM | AUD (blank = all types)
+        min_rating: minimum average archive.org rating (0–5)
+        year: filter to a specific year
+        Returns identifier, date, source type, rating, and download count."""
+        def _run():
+            wheres, params = [], []
+            if source_type:
+                wheres.append("source_type = ?")
+                params.append(source_type.upper())
+            if min_rating > 0:
+                wheres.append("avg_rating >= ?")
+                params.append(min_rating)
+            if year:
+                wheres.append("show_date LIKE ?")
+                params.append(f"{year}-%")
+            sql = (
+                "SELECT identifier, show_date, source_type, avg_rating, num_reviews, downloads, venue "
+                "FROM archive_recordings"
+            )
+            if wheres:
+                sql += " WHERE " + " AND ".join(wheres)
+            sql += " ORDER BY avg_rating DESC, downloads DESC LIMIT ?"
+            params.append(limit)
+            rows = _q(sql, params)
+            if not rows:
+                return "No recordings matched."
+            lines = [f"{len(rows)} recordings (sorted by rating):"]
+            for r in rows:
+                rating = f"{r['avg_rating']:.2f}" if r["avg_rating"] else "no rating"
+                lines.append(
+                    f"  {r['show_date']}  [{r['source_type']:6}]  ★{rating}  "
+                    f"({r['num_reviews']} reviews, {r['downloads']} DL)  {r['identifier']}"
+                )
+            return "\n".join(lines)
+
+        return await asyncio.to_thread(_run)
+
 
 # ── Self-test ─────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
